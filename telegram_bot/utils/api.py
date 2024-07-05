@@ -5,6 +5,7 @@ from datetime import datetime
 import aiohttp
 
 from telegram_bot.utils.instrument import Instrument, Instruments
+from telegram_bot.config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
 # Function to get user subscription info
@@ -73,6 +74,8 @@ async def get_instrument_settings(uid: int, instrument: Instrument):
             data = {'d': '4', 'e': '5', 'f': '6'}
         case 'Collection Bidder':
             data = {'g': '7', 'h': '8', 'i': '9'}
+        case 'BaseInstrument':
+            data = {''}
         case _:
             data = None
 
@@ -88,12 +91,12 @@ async def set_instrument_settings(uid: int, instrument: Instrument, settings: di
 
 async def start_instrument(uid: int, instrument: Instrument):
     logging.info(f'START: starting {instrument.server_name} for user uid={uid}')
-    return True
+    return await send_server_command(uid, instrument, 'start')
 
 
 async def stop_instrument(uid: int, instrument: Instrument):
     logging.info(f'STOP: stopping {instrument.server_name} for user uid={uid}')
-    return True
+    return await send_server_command(uid, instrument, 'stop')
 
 
 INSTRUMENTS = Instruments(
@@ -103,6 +106,15 @@ INSTRUMENTS = Instruments(
                server_name='collection_scanner'),
     Instrument(name='Collection Bidder',
                server_name='collection_bidder'),
+    Instrument(name='BaseInstrument',
+               server_name='unit'),
 )
 
-from all_later_separate import *
+
+async def send_server_command(uid: int, instrument: Instrument, command: str) -> bool:
+    async with aiohttp.ClientSession() as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/{instrument.server_name}/{command}?uid={uid}'
+        async with session.get(url) as resp:
+            if 200 <= resp.status < 300:
+                return True
+            return False

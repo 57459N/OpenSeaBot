@@ -172,6 +172,12 @@ def get_broadcast_confirm_keyboard():
 def get_dev_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Create", callback_data='dev_create'))
+            .add(InlineKeyboardButton(text="Старт", callback_data=InstrumentCallback(action='start',
+                                                                                     instrument_name='BaseInstrument',
+                                                                                     parameter='None').pack()))
+            .add(InlineKeyboardButton(text="Стоп", callback_data=InstrumentCallback(action='stop',
+                                                                                    instrument_name='BaseInstrument',
+                                                                                    parameter='None').pack()))
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .as_markup())
 

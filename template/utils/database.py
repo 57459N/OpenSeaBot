@@ -25,7 +25,7 @@ async def add_or_update_item(data):
                 SET price = ?, address = ?, week_volume = ?, floor = ?, owned_delta = ?, sales_ratio_percent = ?
                 WHERE id = ?
             ''', (price, address, week_volume, floor, owned_delta, sales_ratio_percent, item_id))
-            
+
             await db.execute('''
                 UPDATE fees
                 SET sellerFees = ?, marketplaceFees = ?
@@ -36,15 +36,15 @@ async def add_or_update_item(data):
                 INSERT INTO items (item_name, price, address, week_volume, floor, owned_delta, sales_ratio_percent)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (item, price, address, week_volume, floor, owned_delta, sales_ratio_percent))
-            
+
             cursor = await db.execute('SELECT last_insert_rowid()')
             item_id = (await cursor.fetchone())[0]
-            
+
             await db.execute('''
                 INSERT INTO fees (item_id, sellerFees, marketplaceFees)
                 VALUES (?, ?, ?)
             ''', (item_id, sellerFees, marketplaceFees))
-        
+
         await db.commit()
 
 
@@ -58,7 +58,7 @@ async def get_item_by_name(item_name: str) -> dict:
             WHERE i.item_name = ?
         ''', (item_name,))
         rows = await cursor.fetchall()
-        
+
         if rows:
             result = []
             for row in rows:
@@ -81,7 +81,7 @@ async def get_item_by_name(item_name: str) -> dict:
             return result[0]
         else:
             return None
-        
+
 
 async def initialize_database():
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -97,7 +97,7 @@ async def initialize_database():
                 sales_ratio_percent REAL
             )
         ''')
-        
+
         await db.execute('''
             CREATE TABLE IF NOT EXISTS fees (
                 item_id INTEGER,
@@ -106,10 +106,8 @@ async def initialize_database():
                 FOREIGN KEY (item_id) REFERENCES items (id)
             )
         ''')
-        
+
         await db.commit()
-
-
 
 
 ################################### SETTINGS DB ####################################
@@ -146,7 +144,6 @@ async def initialize_settings_database():
         await db.commit()
 
 
-
 async def get_settings_data_from_db():
     async with aiosqlite.connect(SETTINGS_PATH) as db:
         async with db.execute('SELECT * FROM proxies') as cursor:
@@ -178,7 +175,7 @@ async def get_settings_data_from_db():
             "profit": profit,
             "collections_parser": parser_data
         }
-    
+
 
 async def update_settings_database(json_data: dict):
     async with aiosqlite.connect(SETTINGS_PATH) as db:
@@ -238,7 +235,6 @@ async def update_settings_database(json_data: dict):
         await db.commit()
 
 
-
 ################## WORK STATEMENT ##################
 
 
@@ -254,6 +250,7 @@ async def change_work_statement(json_data: dict) -> None:
 
         await db.commit()
 
+
 async def get_data_from_db() -> dict:
     async with aiosqlite.connect(STATEMENT_PATH) as db:
         async with db.execute('SELECT work_statement FROM config WHERE id=1') as cursor:
@@ -262,7 +259,6 @@ async def get_data_from_db() -> dict:
                 return bool(row[0])
             else:
                 return None
-            
 
 
 async def initialize_statement_database():
