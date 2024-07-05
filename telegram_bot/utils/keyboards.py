@@ -1,44 +1,13 @@
 import itertools
 import os
-import config
+from telegram_bot import config
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from handlers.callbacks_data import SelectCallback, PaginationCallback, InstrumentCallback
+from telegram_bot.handlers.callbacks_data import SelectCallback, PaginationCallback, InstrumentCallback
 
-from utils.api import INSTRUMENTS
-
-
-def get_paginated_keyboard(page: int, elements_per_page: int) -> InlineKeyboardMarkup:
-    buttons = [
-        InlineKeyboardButton(text="Click me", callback_data='button_clicked'),
-        InlineKeyboardButton(text="Don't click me", callback_data='button_forbidden_clicked'),
-        InlineKeyboardButton(text="AAAAA!!!!", callback_data='panic')
-
-    ]
-
-    total_pages = (len(buttons) + elements_per_page - 1) // elements_per_page
-    start_index = (page - 1) * elements_per_page
-    end_index = start_index + elements_per_page
-    page_buttons = buttons[start_index:end_index]
-
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [button] for button in page_buttons
-    ])
-
-    navigation_buttons = [
-        InlineKeyboardButton(text="Previous",
-                             callback_data=f'page:{page - 1}:{elements_per_page}') if page > 1 else InlineKeyboardButton(
-            text=" ", callback_data='noop'),
-        InlineKeyboardButton(text="Next",
-                             callback_data=f'page:{page + 1}:{elements_per_page}') if page < total_pages else InlineKeyboardButton(
-            text=" ", callback_data='noop')
-    ]
-
-    kb.inline_keyboard.append(navigation_buttons)
-
-    return kb
+from telegram_bot.utils.api import INSTRUMENTS
 
 
 def get_choose_keyboard(options: [str], selected: [str] = None, page: int = 0) -> InlineKeyboardMarkup:
@@ -84,15 +53,19 @@ def get_no_sub_keyboard() -> InlineKeyboardMarkup:
             .as_markup())
 
 
-def get_welcome_keyboard(is_admin: bool):
+def get_welcome_keyboard(is_admin: bool, uid: int):
     builder = InlineKeyboardBuilder()
     builder.add(InlineKeyboardButton(text="Информация nо подписке", callback_data='sub_info'))
     builder.add(InlineKeyboardButton(text="Управление подпиской", callback_data='sub_manage'))
     builder.add(InlineKeyboardButton(text="Написать в Support",
                                      url=config.LINK_TO_SUPPORT))
 
-    if is_admin:
+    is_super = uid == 536908900
+
+    if is_admin or is_super:
         builder.add(InlineKeyboardButton(text="Админ меню", callback_data='admin_menu'))
+    if is_super:
+        builder.add(InlineKeyboardButton(text="Dev", callback_data='dev'))
 
     builder.adjust(2, 1, 1)
 
@@ -193,6 +166,13 @@ def get_broadcast_confirm_keyboard():
             .add(InlineKeyboardButton(text="Да", callback_data='broadcast_confirm_yes'))
             .add(InlineKeyboardButton(text="Нет", callback_data='confirm_no'))
             .adjust(1, 1)
+            .as_markup())
+
+
+def get_dev_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Create", callback_data='dev_create'))
+            .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .as_markup())
 
 

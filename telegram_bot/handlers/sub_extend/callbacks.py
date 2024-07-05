@@ -6,9 +6,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Code
 
 import config
-from handlers.sub_extend.states import SubExtendStates
-from utils import api
-import utils.keyboards as kbs
+from telegram_bot.handlers.sub_extend.states import SubExtendStates
+from telegram_bot.utils import api
+import telegram_bot.utils.keyboards as kbs
 
 router = Router()
 

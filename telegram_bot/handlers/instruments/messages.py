@@ -5,8 +5,8 @@ from aiogram.fsm.context import FSMContext
 
 from .states import InstrumentStates
 
-import utils.keyboards as kbs
-from utils.misc import get_settings_beautiful_list
+import telegram_bot.utils.keyboards as kbs
+from telegram_bot.utils.misc import get_settings_beautiful_list
 
 router = Router()
 

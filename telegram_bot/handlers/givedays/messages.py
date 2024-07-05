@@ -2,9 +2,9 @@ import asyncio
 
 from aiogram import types, flags, Router
 from aiogram.fsm.context import FSMContext
-from handlers.givedays.states import GiveDaysStates
-from middlwares.backable_query_middleware import BackableMiddleware
-from utils import keyboards as kbs
+from telegram_bot.handlers.givedays.states import GiveDaysStates
+from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
+from telegram_bot.utils import keyboards as kbs
 
 # from . import router
 

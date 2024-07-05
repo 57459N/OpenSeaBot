@@ -2,17 +2,16 @@ import asyncio
 from datetime import datetime, timedelta
 
 from aiogram.utils.formatting import Code
-
-import utils.keyboards as kbs
-
 from aiogram import Router, types, F, flags
 from aiogram.fsm.context import FSMContext
 
-from handlers.callbacks_data import PaginationCallback, SelectCallback
-from middlwares.backable_query_middleware import BackableMiddleware
-from middlwares.sub_active_middleware import SubActiveMiddleware
-from utils import api
-from utils.misc import go_back, is_user_admin
+from telegram_bot.handlers.callbacks_data import PaginationCallback, SelectCallback
+from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
+from telegram_bot.middlwares.sub_active_middleware import SubActiveMiddleware
+from telegram_bot.utils import api
+from telegram_bot.utils.misc import go_back, is_user_admin
+
+import telegram_bot.utils.keyboards as kbs
 
 router = Router()
 router.callback_query.middleware(BackableMiddleware())
@@ -62,7 +61,7 @@ async def cancel_callback_handler(query: types.CallbackQuery, state: FSMContext)
 
 @router.callback_query(lambda query: query.data == 'delete_message')
 async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await state.clear()
+    # await state.clear()
     await query.message.delete()
     await query.answer()
 
@@ -112,4 +111,10 @@ async def extend_sub_callback_handler(query: types.CallbackQuery, state: FSMCont
 @router.callback_query(lambda query: query.data == 'admin_menu')
 async def admin_menu_callback_handler(query: types.CallbackQuery):
     await query.message.answer(text='Админ меню', reply_markup=kbs.get_admin_menu_keyboard())
+    await query.answer()
+
+
+@router.callback_query(lambda query: query.data == 'dev')
+async def dev_menu_callback_handler(query: types.CallbackQuery):
+    await query.message.answer(text='Dev', reply_markup=kbs.get_dev_keyboard())
     await query.answer()

@@ -4,7 +4,7 @@ from typing import Any
 from datetime import datetime
 import aiohttp
 
-from utils.instrument import Instrument, Instruments
+from telegram_bot.utils.instrument import Instrument, Instruments
 
 
 # Function to get user subscription info
@@ -104,3 +104,5 @@ INSTRUMENTS = Instruments(
     Instrument(name='Collection Bidder',
                server_name='collection_bidder'),
 )
+
+from all_later_separate import *

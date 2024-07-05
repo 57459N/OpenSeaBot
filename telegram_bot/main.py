@@ -6,12 +6,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from handlers.command_handlers import router as command_router
-from handlers.callback_handlers import router as general_callbacks_router
-from handlers.givedays import router as givedays_router
-from handlers.broadcast import router as broadcast_router
-from handlers.instruments import router as instruments_router
-from handlers.sub_extend import router as sub_extend_router
+from telegram_bot.handlers.command_handlers import router as command_router
+from telegram_bot.handlers.callback_handlers import router as general_callbacks_router
+from telegram_bot.handlers.dev import router as dev_router
+from telegram_bot.handlers.givedays import router as givedays_router
+from telegram_bot.handlers.broadcast import router as broadcast_router
+from telegram_bot.handlers.instruments import router as instruments_router
+from telegram_bot.handlers.sub_extend import router as sub_extend_router
 
 import config
 
@@ -30,7 +31,9 @@ async def main() -> None:
         sub_extend_router,
         givedays_router,
         broadcast_router,
-        instruments_router)
+        instruments_router,
+        dev_router
+    )
 
     # Start polling
     await dp.start_polling(bot)
