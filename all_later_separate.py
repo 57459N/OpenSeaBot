@@ -1,9 +1,8 @@
 import logging
-import os
 import shutil
 
 
-async def get_proxies():
+async def get_proxies(uid: int) -> list[str]:
     return ['proxy1', 'proxy2', 'proxy3']
 
 

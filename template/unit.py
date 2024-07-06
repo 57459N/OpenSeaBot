@@ -1,3 +1,4 @@
+import os
 import random
 
 from aiohttp import web
@@ -5,16 +6,19 @@ import asyncio
 import sys
 import logging
 
+from utils.database import change_work_statement
+
 routes = web.RouteTableDef()
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-unit_id = -1
+unit_port = -1
+unit_uid = int(os.getcwd().split('\\')[-1])
 
 
 @routes.get('/id')
 async def _id(request):
-    return web.Response(text=str(unit_id))
+    return web.Response(text=str(unit_port))
 
 
 class Task:
@@ -39,10 +43,10 @@ class Task:
 
 
 def simple_task(_id: int):
-    print(f'Unit {unit_id} running task{random.randint(0, 5) * "."}')
+    print(f'Unit {unit_uid} running task{random.randint(0, 5) * "."}')
 
 
-task = Task(simple_task, unit_id)
+task = Task(simple_task, unit_port)
 
 
 @routes.get('/start')
@@ -66,12 +70,12 @@ async def stop_get(request):
 
 
 def main():
-    global unit_id
-    unit_id = int(sys.argv[1])
+    global unit_port
+    unit_port = int(sys.argv[2])
 
     app = web.Application()
     app.add_routes(routes)
-    web.run_app(app, port=8888 + unit_id)
+    web.run_app(app, port=unit_port)
 
 
 if __name__ == '__main__':

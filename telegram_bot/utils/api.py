@@ -111,9 +111,9 @@ INSTRUMENTS = Instruments(
 )
 
 
-async def send_server_command(uid: int, instrument: Instrument, command: str) -> bool:
+async def send_server_command(uid: int, command: str) -> bool:
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/{instrument.server_name}/{command}?uid={uid}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{command}?uid={uid}'
         async with session.get(url) as resp:
             if 200 <= resp.status < 300:
                 return True
