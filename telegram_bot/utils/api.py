@@ -111,10 +111,17 @@ INSTRUMENTS = Instruments(
 )
 
 
-async def send_server_command(uid: int, command: str) -> bool:
+async def send_server_command(command: str, data: dict[str, Any]) -> bool | dict:
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{command}?uid={uid}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}'
         async with session.get(url) as resp:
-            if 200 <= resp.status < 300:
+            if 'json' in resp.content_type:
+                return await resp.json()
+            elif 200 <= resp.status < 300:
                 return True
             return False
+
+            print('-' * 20)
+            print(resp)
+            print(await resp.text())
+            print('-' * 20)

@@ -14,17 +14,17 @@ router = Router()
 
 @router.callback_query(lambda query: query.data == 'dev_create')
 async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command(query.from_user.id, 'create')
+    await api.send_server_command('create', {'uid': query.from_user.id})
     await query.answer()
 
 
 @router.callback_query(lambda query: query.data == 'dev_start')
 async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command(query.from_user.id, 'start')
+    await api.send_server_command('start', {'uid': query.from_user.id})
     await query.answer()
 
 
 @router.callback_query(lambda query: query.data == 'dev_stop')
 async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command(query.from_user.id, 'stop')
+    await api.send_server_command('stop', {'uid': query.from_user.id})
     await query.answer()

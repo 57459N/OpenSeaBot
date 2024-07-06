@@ -4,7 +4,7 @@ from copy import copy, deepcopy
 from aiogram import Router, F, types, flags
 from aiogram.fsm.context import FSMContext
 
-import config
+from telegram_bot import config
 from telegram_bot.handlers.callbacks_data import InstrumentCallback
 from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
 
@@ -24,7 +24,7 @@ get_settings_map = {
 }
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'info'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'info'))
 @flags.backable()
 async def instruments_callback_handler(query: types.CallbackQuery):
     text = f'''
@@ -44,28 +44,27 @@ async def instruments_callback_handler(query: types.CallbackQuery):
     await query.answer()
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'menu'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'menu'))
 @flags.backable()
 async def instruments_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
-    await query.message.edit_text(text=f'Меню {callback_data.instrument_name}',
-                                  reply_markup=kbs.get_instrument_keyboard(callback_data.instrument_name))
+    await query.message.edit_text(text=f'Меню {callback_data.inst}',
+                                  reply_markup=kbs.get_instrument_keyboard(callback_data.inst))
     await query.answer()
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'settings'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'settings'))
 @flags.backable()
 async def instruments_settings_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback,
                                                 state: FSMContext):
     uid = query.from_user.id
-    instrument = api.INSTRUMENTS[callback_data.instrument_name]
-    settings = await api.get_instrument_settings(uid, instrument)
-
+    instrument = api.INSTRUMENTS[callback_data.inst]
+    settings = await api.send_server_command('get_settings', {'uid': uid})
     if settings is None:
         await query.answer('Error while getting settings')
         return
 
     await state.update_data(prev_settings=settings, settings=deepcopy(settings), message=query.message,
-                            instrument=instrument, parameter=callback_data.parameter)
+                            instrument=instrument, parameter=callback_data.param)
 
     await query.message.edit_text(text=get_settings_beautiful_list(settings=settings,
                                                                    header=f'Настройки {instrument.name}:'
@@ -75,7 +74,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
     await query.answer()
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'settings_change'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'settings_change'))
 async def instruments_settings_change_callback_handler(query: types.CallbackQuery, state: FSMContext,
                                                        callback_data: InstrumentCallback):
     try:
@@ -87,18 +86,18 @@ async def instruments_settings_change_callback_handler(query: types.CallbackQuer
         return
 
     await state.set_state(InstrumentStates.settings_change)
-    await state.update_data(parameter=callback_data.parameter)
+    await state.update_data(parameter=callback_data.param)
     await query.message.edit_text(text=get_settings_beautiful_list(settings=settings,
-                                                                   active=callback_data.parameter,
-                                                                   header=f'Настройки {callback_data.instrument_name}:'
+                                                                   active=callback_data.param,
+                                                                   header=f'Настройки {callback_data.inst}:'
                                                                    ).as_html(),
                                   parse_mode='HTML',
-                                  reply_markup=kbs.get_instrument_settings_keyboard(callback_data.instrument_name,
+                                  reply_markup=kbs.get_instrument_settings_keyboard(callback_data.inst,
                                                                                     settings.keys()))
     await query.answer()
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'settings_finish'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'settings_finish'))
 async def instruments_settings_finish_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback,
                                                        state: FSMContext):
     data = await state.get_data()
@@ -111,7 +110,7 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
         await m.delete()
         return
 
-    instrument = api.INSTRUMENTS[callback_data.instrument_name]
+    instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
     if not await api.set_instrument_settings(uid, instrument, settings):
@@ -124,21 +123,23 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
     await query.answer()
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'start'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'start'))
 async def instruments_start_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
-    instrument = api.INSTRUMENTS[callback_data.instrument_name]
+    instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
-    if await api.start_instrument(uid, instrument):
+
+    if await api.send_server_command('start', {'uid': uid}):
         await query.answer(f'{instrument.name} started')
     else:
         await query.answer('Something went wrong')
 
 
-@router.callback_query(InstrumentCallback.filter(F.action == 'stop'))
+@router.callback_query(InstrumentCallback.filter(F.act == 'stop'))
 async def instruments_start_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
-    instrument = api.INSTRUMENTS[callback_data.instrument_name]
+    instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
-    if await api.stop_instrument(uid, instrument):
-        await query.answer(f'{instrument.name} stopped')
+
+    if await api.send_server_command('stop', {'uid': uid}):
+        await query.answer(f'{instrument.name} started')
     else:
         await query.answer('Something went wrong')

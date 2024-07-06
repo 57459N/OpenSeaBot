@@ -1,7 +1,6 @@
 import logging
 import shutil
 
-
 async def get_proxies(uid: int) -> list[str]:
     return ['proxy1', 'proxy2', 'proxy3']
 
@@ -33,6 +32,8 @@ async def create_unit(uid: int, private_key: str, proxies: list[str]):
         text = f'Error with CONFIG FILES while creating unit for user {uid}'
         logging.error(f'SERVER:CREATE_UNIT: {text}')
         raise Exception(text) from e
+
+
 
 
 async def run_unit(uid):

@@ -11,7 +11,7 @@ class SelectCallback(CallbackData, prefix='sel'):
     option: str
 
 
-class InstrumentCallback(CallbackData, prefix='instrument'):
-    instrument_name: str = None
-    action: str = None
-    parameter: str = None
+class InstrumentCallback(CallbackData, prefix='inst'):
+    inst: str = None
+    act: str = None
+    param: str = None

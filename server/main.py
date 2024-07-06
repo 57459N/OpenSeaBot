@@ -16,7 +16,6 @@ def main():
         port = int(sys.argv[1])
     else:
         print(f'To specify another port use `{sys.argv[0]} <port>`')
-    print(f'Starting server on port {port}')
     # start server
     app = web.Application()
     # to allow routes to use active units dict

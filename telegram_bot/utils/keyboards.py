@@ -187,14 +187,14 @@ def get_just_back_button_keyboard():
 
 def get_instruments_keyboard():
     b = InlineKeyboardBuilder()
-    b.add(InlineKeyboardButton(text="Инфо", callback_data=InstrumentCallback(action='info',
-                                                                             instrument_name='None',
-                                                                             parameter='None').pack()))
+    b.add(InlineKeyboardButton(text="Инфо", callback_data=InstrumentCallback(act='info',
+                                                                             inst='None',
+                                                                             param='None').pack()))
 
     for i in INSTRUMENTS:
-        b.add(InlineKeyboardButton(text=i.name, callback_data=InstrumentCallback(instrument_name=i.name,
-                                                                                 action='menu',
-                                                                                 parameter='None').pack()))
+        b.add(InlineKeyboardButton(text=i.name, callback_data=InstrumentCallback(inst=i.name,
+                                                                                 act='menu',
+                                                                                 param='None').pack()))
     b.add(InlineKeyboardButton(text="Назад", callback_data='back'))
 
     b.adjust(2)
@@ -203,15 +203,15 @@ def get_instruments_keyboard():
 
 def get_instrument_keyboard(instrument_name: str):
     return (InlineKeyboardBuilder()
-            .add(InlineKeyboardButton(text="Старт", callback_data=InstrumentCallback(action='start',
-                                                                                     instrument_name=instrument_name,
-                                                                                     parameter='None').pack()))
-            .add(InlineKeyboardButton(text="Стоп", callback_data=InstrumentCallback(action='stop',
-                                                                                    instrument_name=instrument_name,
-                                                                                    parameter='None').pack()))
-            .add(InlineKeyboardButton(text="Настройки", callback_data=InstrumentCallback(action='settings',
-                                                                                         instrument_name=instrument_name,
-                                                                                         parameter='None').pack()))
+            .add(InlineKeyboardButton(text="Старт", callback_data=InstrumentCallback(act='start',
+                                                                                     inst=instrument_name,
+                                                                                     param='None').pack()))
+            .add(InlineKeyboardButton(text="Стоп", callback_data=InstrumentCallback(act='stop',
+                                                                                    inst=instrument_name,
+                                                                                    param='None').pack()))
+            .add(InlineKeyboardButton(text="Настройки", callback_data=InstrumentCallback(act='settings',
+                                                                                         inst=instrument_name,
+                                                                                         param='None').pack()))
             .add(InlineKeyboardButton(text="Назад", callback_data='back'))
             .adjust(2, 2)
             .as_markup())
@@ -220,12 +220,12 @@ def get_instrument_keyboard(instrument_name: str):
 def get_instrument_settings_keyboard(instrument_name: str, fields):
     b = InlineKeyboardBuilder()
     for field in fields:
-        b.add(InlineKeyboardButton(text=field, callback_data=InstrumentCallback(action='settings_change',
-                                                                                instrument_name=instrument_name,
-                                                                                parameter=field).pack()))
-    b.add(InlineKeyboardButton(text="Готово", callback_data=InstrumentCallback(action='settings_finish',
-                                                                               instrument_name=instrument_name,
-                                                                               parameter='None').pack()))
+        b.add(InlineKeyboardButton(text=field, callback_data=InstrumentCallback(act='settings_change',
+                                                                                inst=instrument_name,
+                                                                                param=field).pack()))
+    b.add(InlineKeyboardButton(text="Готово", callback_data=InstrumentCallback(act='settings_finish',
+                                                                               inst=instrument_name,
+                                                                               param='None').pack()))
     b.add(InlineKeyboardButton(text="Назад", callback_data='back'))
     b.adjust(2)
     return b.as_markup()
