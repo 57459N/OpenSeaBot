@@ -114,3 +114,13 @@ async def set_settings(request):
         url = f'http://localhost:{active_units[uid].port}/set_settings'
         async with session.post(url, data=settings) as resp:
             return web.Response(status=resp.status, text=await resp.text())
+
+
+@routes.get('/server/get_user_ids')
+async def set_settings(request):
+    user_ids = []
+    for file in os.listdir('./units'):
+        if os.path.isdir(f'./units/{file}') and file.isdigit():
+            user_ids.append(file)
+
+    return web.json_response({'user_ids': user_ids})

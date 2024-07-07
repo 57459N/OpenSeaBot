@@ -50,7 +50,7 @@ async def broadcast_confirm_callback_handler(query: types.CallbackQuery, state: 
         except TelegramBadRequest:
             pass
 
-    usernames = await api.get_usernames(to_who)
+    usernames = await api.get_usernames(query.bot, to_who)
 
     await state.update_data(usernames=usernames)
 

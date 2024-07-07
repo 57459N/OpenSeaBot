@@ -1,8 +1,10 @@
+import asyncio
 import logging
 import random
 from typing import Any
 from datetime import datetime
 import aiohttp
+from aiogram import Bot, types
 
 from telegram_bot.utils.instrument import Instrument, Instruments
 from telegram_bot.config import SERVER_HOST_IP, SERVER_HOST_PORT
@@ -57,11 +59,32 @@ async def give_days(*usernames: str, to_who: str, amount: int):
     logging.info(f'SUBS: requesting subs for {amount} days to {to_who} : {usernames}')
 
 
-# Return all usernames
-# todo: call the API
-async def get_user_ids(status: str = None) -> [str]:
-    logging.info('USERNAMES: requesting usernames from server')
-    return [f'user_{i}' for i in range(13)]
+async def get_usernames(bot: Bot, status: str = None) -> list[str] | None:
+    users = await get_users(bot, status)
+    usernames = [u.username if u.username else '`Empty`' for u in users]
+    return usernames
+
+
+async def get_users(bot: Bot, status: str = None) -> tuple[types.ChatFullInfo] | None:
+    user_ids = await get_user_ids(status)
+    return await asyncio.gather(*(bot.get_chat(uid) for uid in user_ids))
+
+
+async def get_user_ids(status: str = None) -> list[int] | None:
+    logging.info('USER_IDS: requesting user_ids from server')
+    async with aiohttp.ClientSession() as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids'
+        async with session.get(url) as resp:
+            try:
+                if 'json' in resp.content_type:
+                    return (await resp.json())['user_ids']
+                else:
+                    raise ValueError('Bad response')
+            except ValueError:
+                logging.error('USER_IDS: bad response type, expected json')
+            except KeyError:
+                logging.error('USER_IDS: bad response, expected `user_ids` key')
+            return None
 
 
 INSTRUMENTS = Instruments(
@@ -79,8 +102,3 @@ async def send_server_command(command: str, data: dict[str, Any]) -> bool | dict
             elif 200 <= resp.status < 300:
                 return True
             return False
-
-            print('-' * 20)
-            print(resp)
-            print(await resp.text())
-            print('-' * 20)

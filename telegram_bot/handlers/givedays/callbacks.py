@@ -73,7 +73,8 @@ async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery,
 @flags.backable()
 async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    usernames = await api.get_usernames(data['to_who'])
+    usernames = await api.get_usernames(query.bot, data['to_who'])
+
     await state.set_state(GiveDaysStates.choosing_usernames)
     await state.update_data(options=usernames, selected_options=set())
     await query.message.edit_text(text='Выберите пользователей:',
