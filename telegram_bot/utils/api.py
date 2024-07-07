@@ -59,36 +59,12 @@ async def give_days(*usernames: str, to_who: str, amount: int):
 
 # Return all usernames
 # todo: call the API
-async def get_usernames(status: str = None) -> [str]:
+async def get_user_ids(status: str = None) -> [str]:
     logging.info('USERNAMES: requesting usernames from server')
     return [f'user_{i}' for i in range(13)]
 
 
-
-
-# todo: call the API
-async def set_instrument_settings(uid: int, instrument: Instrument, settings: dict):
-    logging.info(f'SETTINGS: setting {instrument.server_name}: {settings} settings for user uid={uid}')
-    return True
-
-
-async def start_instrument(uid: int, instrument: Instrument):
-    logging.info(f'START: starting {instrument.server_name} for user uid={uid}')
-    return await send_server_command(uid, instrument, 'start')
-
-
-async def stop_instrument(uid: int, instrument: Instrument):
-    logging.info(f'STOP: stopping {instrument.server_name} for user uid={uid}')
-    return await send_server_command(uid, instrument, 'stop')
-
-
 INSTRUMENTS = Instruments(
-    Instrument(name='Floor Lister',
-               server_name='floor_lister'),
-    Instrument(name='Collection Scanner',
-               server_name='collection_scanner'),
-    Instrument(name='Collection Bidder',
-               server_name='collection_bidder'),
     Instrument(name='BaseInstrument',
                server_name='unit'),
 )
