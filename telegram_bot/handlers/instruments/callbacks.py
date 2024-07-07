@@ -59,7 +59,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
     uid = query.from_user.id
     instrument = api.INSTRUMENTS[callback_data.inst]
     settings = await api.send_server_command('get_settings', {'uid': uid})
-    if settings is None:
+    if settings is False:
         await query.answer('Error while getting settings')
         return
 
@@ -113,7 +113,7 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    if not await api.set_instrument_settings(uid, instrument, settings):
+    if not await api.send_server_command('set_settings', {'uid': uid, **settings}):
         await query.answer('Something went wrong. Please try again later...')
         return
 

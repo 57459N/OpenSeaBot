@@ -28,3 +28,9 @@ async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
 async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await api.send_server_command('stop', {'uid': query.from_user.id})
     await query.answer()
+
+
+@router.callback_query(lambda query: query.data == 'dev_set_settings')
+async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
+    await api.send_server_command('stop', {'uid': query.from_user.id})
+    await query.answer()

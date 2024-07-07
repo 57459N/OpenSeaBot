@@ -174,6 +174,9 @@ def get_dev_keyboard():
             .add(InlineKeyboardButton(text="Create", callback_data='dev_create'))
             .add(InlineKeyboardButton(text="Start", callback_data='dev_start'))
             .add(InlineKeyboardButton(text="Stop", callback_data='dev_stop'))
+            .add(InlineKeyboardButton(text="Настройки", callback_data=InstrumentCallback(act='settings',
+                                                                                         inst="BaseInstrument",
+                                                                                         param='None').pack()))
 
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .as_markup())
@@ -217,7 +220,7 @@ def get_instrument_keyboard(instrument_name: str):
             .as_markup())
 
 
-def get_instrument_settings_keyboard(instrument_name: str, fields):
+def get_instrument_settings_keyboard(instrument_name: str, fields: list[str]):
     b = InlineKeyboardBuilder()
     for field in fields:
         b.add(InlineKeyboardButton(text=field, callback_data=InstrumentCallback(act='settings_change',

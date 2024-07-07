@@ -38,7 +38,7 @@ async def unit_create_get(request):
 
 
 @routes.get('/unit/start')
-async def unit_start_get(request):
+async def unit_start(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
         logging.warning(f'SERVER:START_UNIT: bad request')
@@ -63,7 +63,7 @@ async def unit_start_get(request):
 async def unit_stop(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
-        logging.warning(f'SERVER:START_UNIT: bad request')
+        logging.warning(f'SERVER:STOP_UNIT: bad request')
         return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
 
     if uid not in os.listdir('./units'):
@@ -78,7 +78,25 @@ async def unit_stop(request):
 
 
 @routes.get('/unit/get_settings')
-async def get_settings_get(request):
+async def get_settings(request):
+    uid = request.rel_url.query.get('uid', None)
+    if uid is None:
+        logging.warning(f'SERVER:GET_SETTINGS: bad request')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
+
+    if uid not in os.listdir('./units'):
+        logging.warning(f'SERVER:GET_SETTINGS: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    active_units = request.app['active_units']
+    async with aiohttp.ClientSession() as session:
+        url = f'http://localhost:{active_units[uid].port}/get_settings'
+        async with session.get(url) as resp:
+            return web.json_response(await resp.json(encoding='utf-8'))
+
+
+@routes.get('/unit/set_settings')
+async def set_settings(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
         logging.warning(f'SERVER:START_UNIT: bad request')
@@ -89,7 +107,10 @@ async def get_settings_get(request):
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     active_units = request.app['active_units']
+    settings = dict(request.rel_url.query)
+    settings.pop('uid')
+    print(type(settings))
     async with aiohttp.ClientSession() as session:
-        url = f'http://localhost:{active_units[uid].port}/get_settings'
-        async with session.get(url) as resp:
-            return web.json_response(await resp.json(encoding='utf-8'))
+        url = f'http://localhost:{active_units[uid].port}/set_settings'
+        async with session.post(url, data=settings) as resp:
+            return web.Response(status=resp.status, text=await resp.text())

@@ -64,23 +64,6 @@ async def get_usernames(status: str = None) -> [str]:
     return [f'user_{i}' for i in range(13)]
 
 
-# todo: Maybe rewrite in two functions - get and set with variable parameter `instrument_name`
-# todo: call the API
-async def get_instrument_settings(uid: int, instrument: Instrument):
-    match instrument.name:
-        case 'Floor Lister':
-            data = {'a': '1', 'b': '2', 'c': '3'}
-        case 'Collection Scanner':
-            data = {'d': '4', 'e': '5', 'f': '6'}
-        case 'Collection Bidder':
-            data = {'g': '7', 'h': '8', 'i': '9'}
-        case 'BaseInstrument':
-            data = {''}
-        case _:
-            data = None
-
-    logging.info(f'SETTINGS: requesting {instrument.server_name} settings for user uid={uid}')
-    return data
 
 
 # todo: call the API
