@@ -25,6 +25,7 @@ async def sub_extend_callback_handler(query: types.CallbackQuery, state: FSMCont
     await state.set_state(SubExtendStates.showing_wallet)
     await query.answer()
     data = await state.get_data()
+
     if wallet_message := data.get('generate_wallet_message', None):
         with suppress(TelegramBadRequest):
             await wallet_message.delete()
@@ -87,7 +88,12 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
             try:
                 await query.message.edit_text(text=text, reply_markup=kb)
             except TelegramBadRequest:
-                await query.message.answer(text=text, reply_markup=kb)
+                data = await state.get_data()
+                if m := data.get('generate_wallet_message', None):
+                    try:
+                        await m.edit_text(text=text, reply_markup=kb)
+                    except TelegramBadRequest:
+                        await query.message.answer(text=text, reply_markup=kb)
 
     asyncio.create_task(handle_payment())
     await edit_with_wallet_info(query, state, answer=False)
