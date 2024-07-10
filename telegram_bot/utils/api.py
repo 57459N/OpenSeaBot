@@ -10,22 +10,15 @@ from telegram_bot.utils.instrument import Instrument, Instruments
 from telegram_bot.config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
-# Function to get user subscription info
-# Expects
-#   'status': str
-#   'end_date': datetime
-#   'days_left': int
-#   'balance': int
+
 # todo: call the API
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
     logging.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
-    end_date = datetime.strptime('2222-01-01', '%Y-%m-%d')
-    return {
-        'status': 'Active',
-        'end_date': end_date,
-        'days_left': (end_date - datetime.now()).days,
-        'balance': random.randint(100, 1000)
-    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/get_info?uid={uid}') as resp:
+            if resp.status == 200 and 'json' in resp.content_type:
+                return await resp.json()
+
 
 
 # Checks if user is subscribed
@@ -44,7 +37,14 @@ async def is_users_sub_active(uid: int) -> bool:
 # todo: call the API
 async def get_wallet_to_extend_sub(uid):
     logging.info(f'WALLET: requesting wallet address for user uid={uid}')
-    return 'aaaaaaaaaaaaaaa Test wallet address bbbbbbbbbbbbb'
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+                f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_wallet_to_extend_sub?uid={uid}') as resp:
+            if resp.status == 200 and 'json' in resp.content_type:
+                return await resp.json()
+            else:
+                logging.error(f'WALLET: error requesting wallet address for user uid={uid}\n{resp}')
+                return None
 
 
 # Gives specified type of users or users in usernames amount of days
@@ -102,3 +102,11 @@ async def send_server_command(command: str, data: dict[str, Any]) -> bool | dict
             elif 200 <= resp.status < 300:
                 return True
             return False
+
+
+async def increase_user_balance(uid, paid_amount, token):
+    async with aiohttp.ClientSession() as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/increase_balance?uid={uid}&amount={paid_amount}&token={token}'
+        async with session.get(url) as resp:
+            return 200 <= resp.status < 300
+

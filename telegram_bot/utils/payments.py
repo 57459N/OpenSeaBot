@@ -55,7 +55,7 @@ async def fetch_balance(w3: Web3, address: str, token_addresses: list) -> dict:
         try:
             contract = w3.eth.contract(Web3.to_checksum_address(token), abi=abi)
             balance = await contract.functions.balanceOf(address).call()
-            
+
             if balance > 0:
                 decimals = await contract.functions.decimals().call()
                 balance = round(balance / 10**decimals, 2)
@@ -75,7 +75,7 @@ async def fetch_balance(w3: Web3, address: str, token_addresses: list) -> dict:
                     "balance": 0
                 }
             )
-    
+
     return results
 
 async def check_payment_handler(config: dict, _address: str, timeout: int = 60) -> dict:
@@ -111,10 +111,11 @@ async def check_payment_handler(config: dict, _address: str, timeout: int = 60) 
                     if resp["balance"] > 0:
                         logger.info(f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
                         return resp
-            
+
             logger.info(f'Nothin was found at address: {address}')
             await asyncio.sleep(10)
 
         except Exception as _err:
             logger.exception(_err)
             await asyncio.sleep(10)
+

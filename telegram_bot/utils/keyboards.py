@@ -53,6 +53,13 @@ def get_no_sub_keyboard() -> InlineKeyboardMarkup:
             .as_markup())
 
 
+def get_support_keyboard() -> InlineKeyboardMarkup:
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Написать в Support", url=config.LINK_TO_SUPPORT))
+            .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
+            .as_markup())
+
+
 def get_welcome_keyboard(is_admin: bool, uid: int):
     builder = InlineKeyboardBuilder()
     builder.add(InlineKeyboardButton(text="Информация nо подписке", callback_data='sub_info'))
@@ -84,7 +91,7 @@ def get_sub_info_keyboard():
 def get_sub_extend_generate_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Сгенерировать кошелек", callback_data='sub_extend_generate'))
-            .add(InlineKeyboardButton(text="На главное меню", callback_data='back'))
+            .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .adjust(1, 1)
             .as_markup())
 
@@ -92,6 +99,13 @@ def get_sub_extend_generate_keyboard():
 def get_sub_extend_to_main_menu_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="На главное меню", callback_data='back'))
+            .adjust(1)
+            .as_markup())
+
+
+def get_delete_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .adjust(1)
             .as_markup())
 

@@ -1,6 +1,8 @@
 import asyncio
+from contextlib import suppress
 from datetime import datetime, timedelta
 
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.formatting import Code
 from aiogram import Router, types, F, flags
 from aiogram.fsm.context import FSMContext
@@ -79,12 +81,12 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
 
 С помощью данного меню ты можешь продлить подписку. Нажми на кнопку ниже, чтобы получить адрес для оплаты.
 
-Статус подписки: {sub_info['status']}
-Подписка активна до: {sub_info['end_date']}
+Статус подписки: {'Активна' if sub_info['status'].lower() == 'active' else 'Не активна'}
 Осталось дней до конца подписки: {sub_info['days_left']}
 Ваш баланс: {sub_info['balance']}
 '''
-    await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard())
+    with suppress(TelegramBadRequest):
+        await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard())
     await query.answer()
 
 

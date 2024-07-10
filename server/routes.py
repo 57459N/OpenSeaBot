@@ -2,12 +2,14 @@ import asyncio
 import logging
 import os
 import sys
+from dataclasses import asdict
 
 from aiohttp import web
 import aiohttp
 
-from all_later_separate import get_private_key, get_proxies, create_unit
-from misc import init_unit
+from misc import create_unit, init_unit, get_userinfo, validate_token, unit_exists
+from server import config
+from server.user_info import UserInfo
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -24,9 +26,7 @@ async def unit_create_get(request):
         return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
 
     try:
-        key = await get_private_key(uid)
-        proxies = await get_proxies(uid)
-        await create_unit(uid, key, proxies)
+        await create_unit(uid)
         await asyncio.sleep(1)
         request.app['active_units'][uid] = init_unit(uid)
         await asyncio.sleep(1)
@@ -42,9 +42,9 @@ async def unit_start(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
         logging.warning(f'SERVER:START_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/start?uid=1')
 
-    if uid not in os.listdir('./units'):
+    if not unit_exists(uid):
         logging.warning(f'SERVER:START_UNIT: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
@@ -64,9 +64,9 @@ async def unit_stop(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
         logging.warning(f'SERVER:STOP_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/stop?uid=1')
 
-    if uid not in os.listdir('./units'):
+    if not unit_exists(uid):
         logging.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
@@ -82,9 +82,9 @@ async def get_settings(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
         logging.warning(f'SERVER:GET_SETTINGS: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/get_settings?uid=1')
 
-    if uid not in os.listdir('./units'):
+    if not unit_exists(uid):
         logging.warning(f'SERVER:GET_SETTINGS: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
@@ -100,9 +100,9 @@ async def set_settings(request):
     uid = request.rel_url.query.get('uid', None)
     if uid is None:
         logging.warning(f'SERVER:START_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/set_settings?uid=1')
 
-    if uid not in os.listdir('./units'):
+    if not unit_exists(uid):
         logging.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
@@ -124,3 +124,54 @@ async def set_settings(request):
             user_ids.append(file)
 
     return web.json_response({'user_ids': user_ids})
+
+
+@routes.get('/user/increase_balance')
+async def increase_user_balance(request):
+    uid = request.rel_url.query.get('uid', None)
+    amount = request.rel_url.query.get('amount', None)
+    token = request.rel_url.query.get('token', None)
+    if uid is None or amount is None or token is None:
+        logging.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
+        return web.Response(status=400,
+                            text='Provide `uid`, `amount` and `token` parameters into URL.'
+                                 ' For example: /user/increase_balance?uid=1&amount=10&token=123')
+
+    if validate_token(token) is False:
+        logging.error(f'SERVER:INCREASE_USER_BALANCE: bad token trying to increase balance for {uid}')
+        return web.Response(status=401, text='Bad token')
+
+    info_path = f'./units/{uid}/.userinfo'
+    # User's unit is not created yet
+    if not unit_exists(uid):
+        dirs = info_path[:info_path.rfind('/')]
+        os.makedirs(dirs, exist_ok=True)
+        try:
+            await create_unit(uid)
+            request.app['active_units'][uid] = init_unit(uid)
+        except Exception as e:
+            logging.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not created\n{e}')
+
+    with UserInfo(uid) as ui:
+        ui.balance += float(amount)
+
+    logging.info(f'SERVER:INCREASE_USER_BALANCE: balance increased by {amount} to user {uid}')
+
+    return web.Response(status=200, text='OK')
+
+
+@routes.get('/user/get_info')
+async def get_user_info_handler(request):
+    uid = request.rel_url.query.get('uid', None)
+    if uid is None:
+        logging.warning(f'SERVER:GET_USER_INFO: bad request')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /user/get_info?uid=1')
+
+    if not unit_exists(uid):
+        logging.warning(f'SERVER:GET_USER_INFO: user {uid} not found')
+        return web.Response(status=404, text=f'User {uid} not found')
+
+    with UserInfo(uid) as ui:
+        dict_ui = asdict(ui)
+        dict_ui['days_left'] = dict_ui['balance'] // config.sub_cost
+        return web.json_response(dict_ui)
