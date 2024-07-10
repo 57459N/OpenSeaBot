@@ -7,9 +7,9 @@ from dataclasses import asdict
 from aiohttp import web
 import aiohttp
 
-from misc import create_unit, init_unit, get_userinfo, validate_token, unit_exists
+from misc import create_unit, init_unit, validate_token, unit_exists
 from server import config
-from server.user_info import UserInfo
+from server.user_info import UserInfo, UserStatus
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -136,6 +136,14 @@ async def increase_user_balance(request):
         return web.Response(status=400,
                             text='Provide `uid`, `amount` and `token` parameters into URL.'
                                  ' For example: /user/increase_balance?uid=1&amount=10&token=123')
+    try:
+        amount = float(amount)
+        a = int(uid)
+    except ValueError:
+        logging.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
+        return web.Response(status=400,
+                            text='`uid` must be an integer\n`amount` must be a number. 777 or 3.14'
+                                 ' For example: /user/increase_balance?uid=1&amount=10&token=123')
 
     if validate_token(token) is False:
         logging.error(f'SERVER:INCREASE_USER_BALANCE: bad token trying to increase balance for {uid}')
@@ -152,8 +160,8 @@ async def increase_user_balance(request):
         except Exception as e:
             logging.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not created\n{e}')
 
-    with UserInfo(uid) as ui:
-        ui.balance += float(amount)
+    with UserInfo(info_path) as ui:
+        ui.increase_balance_and_activate(amount)
 
     logging.info(f'SERVER:INCREASE_USER_BALANCE: balance increased by {amount} to user {uid}')
 
@@ -171,7 +179,7 @@ async def get_user_info_handler(request):
         logging.warning(f'SERVER:GET_USER_INFO: user {uid} not found')
         return web.Response(status=404, text=f'User {uid} not found')
 
-    with UserInfo(uid) as ui:
+    with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.sub_cost
         return web.json_response(dict_ui)

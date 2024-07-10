@@ -75,15 +75,18 @@ async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda query: query.data == 'sub_info_reload')
 async def sub_info_callback_handler(query: types.CallbackQuery):
     sub_info = await api.get_user_subscription_info_by_id(query.from_user.id)
+    status = 'Активна' if sub_info.get('status', 'No info').lower() == 'active' else 'Не активна'
+    days_left = sub_info.get('days_left', 'No info')
+    balance = sub_info.get('balance', 'No info')
 
     text = f'''
 Привет, @{query.from_user.username}!
 
 С помощью данного меню ты можешь продлить подписку. Нажми на кнопку ниже, чтобы получить адрес для оплаты.
 
-Статус подписки: {'Активна' if sub_info['status'].lower() == 'active' else 'Не активна'}
-Осталось дней до конца подписки: {sub_info['days_left']}
-Ваш баланс: {sub_info['balance']}
+Статус подписки: {status}
+Осталось дней до конца подписки: {days_left}
+Ваш баланс: {balance}
 '''
     with suppress(TelegramBadRequest):
         await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard())

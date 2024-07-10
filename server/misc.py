@@ -10,6 +10,7 @@ from subprocess import Popen
 from typing import Any
 
 from server import config
+from server.user_info import UserInfo, UserStatus
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -87,29 +88,10 @@ def init_unit(uid: str) -> Unit:
     return unit
 
 
-def update_userinfo(uid: int | str, data: dict[str, Any]):
-    info = get_userinfo(uid)
-    info.update(data)
-
-    path = f'./units/{uid}/.userinfo'
-    dirs = path[:path.rfind('/')]
-    os.makedirs(dirs, exist_ok=True)
-    with open(path, 'w') as f:
-        json.dump(info, f)
-
-
-def get_userinfo(uid: int | str) -> dict[str, Any]:
-    path = f'./units/{uid}/.userinfo'
-    dirs = path[:path.rfind('/')]
-    os.makedirs(dirs, exist_ok=True)
-    if os.path.exists(path) and os.path.getsize(path) > 0:
-        with open(path, 'r') as f:
-            return json.load(f)
-    return {}
-
-
 def validate_token(token: str) -> bool:
     return token == config.token
 
+
 def unit_exists(uid: int) -> bool:
     return os.path.exists(f'./units/{uid}/unit.py')
+
