@@ -1,47 +1,35 @@
 import asyncio
+import time
 from _datetime import datetime, timedelta
 import logging
+from contextlib import suppress
 
+import aiohttp
 from aiohttp import web
 import sys
 import os
 from routes import routes
-from misc import init_unit
-from server import misc, config
-from server.user_info import UserInfo
+from misc import init_unit, Unit
+from server import misc
 
 
-async def daily_sub_balance_decrease(app: web.Application):
-    while True:
-        now = datetime.now()
-        midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
-        seconds_until_midnight = 10  # (midnight - now).total_seconds()
-        logging.info(
-            f"SERVER:DAILY_SUB_BALANCE_DECREASE: sleeping {seconds_until_midnight} seconds till next tax collection")
-        await asyncio.sleep(seconds_until_midnight)
-
-        for uid in os.listdir('./units'):
-            if not os.path.isdir(f'./units/{uid}'):
-                continue
-
-            try:
-                with UserInfo(f'./units/{uid}/.userinfo') as ui:
-                    ui.decrease_balance_or_deactivate(config.sub_cost)
-                    logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is paid")
-            except ValueError as e:
-                logging.warning(
-                    f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} directory doesn't contain .userinfo file\n{e}")
+async def daily_ctx(app: web.Application):
+    task = asyncio.create_task(misc.daily_sub_balance_decrease(app))
+    yield
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task
 
 
 def main():
     # init all units
-    active_units = dict()
+    active_units: dict[str, Unit] = dict()
 
     if not os.path.exists('./units'):
         os.mkdir('./units')
     for uid in os.listdir('./units'):
         active_units[uid] = init_unit(uid)
-
+    time.sleep(5)
     port = 8887
     if len(sys.argv) == 2:
         port = int(sys.argv[1])
@@ -52,8 +40,9 @@ def main():
     app = web.Application()
     # to allow routes to use active units dict
     app['active_units'] = active_units
+    app['port'] = port
 
-    # app.on_startup.append(daily_sub_balance_decrease)
+    app.cleanup_ctx.append(daily_ctx)
 
     app.add_routes(routes)
 

@@ -33,6 +33,16 @@ async def start_get(request):
 
     return web.Response(text='Unit started')
 
+@routes.get('/is_running')
+async def is_running_get(request):
+    is_running = await get_data_from_db()
+    if is_running:
+        logging.info(f'UNIT:IS_RUNNING: unit {unit_uid} is running')
+        return web.Response(text='True')
+    else:
+        logging.info(f'UNIT:IS_RUNNING: unit {unit_uid} is not running')
+        return web.Response(text='False')
+
 
 @routes.get('/stop')
 async def stop_get(request):
@@ -46,6 +56,7 @@ async def stop_get(request):
 
         logging.info(f'UNIT:STOP: unit {unit_uid} stopped')
         return web.Response(text='Unit stopped')
+
 
 
 @routes.get('/get_settings')

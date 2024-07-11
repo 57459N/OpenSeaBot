@@ -1,13 +1,16 @@
-import json
+import asyncio
 import logging
 import os
 import shutil
 import sys
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from socket import socket, AF_INET, SOCK_STREAM
 from subprocess import Popen
-from typing import Any
+
+import aiohttp
+from aiohttp import web
 
 from server import config
 from server.user_info import UserInfo, UserStatus
@@ -95,3 +98,36 @@ def validate_token(token: str) -> bool:
 def unit_exists(uid: int) -> bool:
     return os.path.exists(f'./units/{uid}/unit.py')
 
+
+async def daily_sub_balance_decrease(app: web.Application):
+    while True:
+        now = datetime.now()
+        midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+        seconds_until_midnight = (midnight - now).total_seconds()
+        logging.info(
+            f"SERVER:DAILY_SUB_BALANCE_DECREASE: sleeping {seconds_until_midnight} seconds till next tax collection")
+        await asyncio.sleep(seconds_until_midnight)
+
+        for uid in os.listdir('./units'):
+            if not os.path.isdir(f'./units/{uid}'):
+                continue
+
+            try:
+                with UserInfo(f'./units/{uid}/.userinfo') as ui:
+                    if ui.status != UserStatus.active and uid in app['active_units']:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(
+                                    url=f"http://127.0.0.1:{app['active_units'][uid].port}/is_running") as resp:
+                                is_running = await resp.text() == 'True'
+                                if is_running:
+                                    await session.get(url=f"http://127.0.0.1:{app['active_units'][uid].port}/stop")
+                        continue
+
+                    if ui.decrease_balance_or_deactivate(config.sub_cost):
+                        logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is paid")
+                    else:
+                        logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is not paid")
+
+            except ValueError as e:
+                logging.warning(
+                    f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} directory doesn't contain .userinfo file\n{e}")

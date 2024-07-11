@@ -128,10 +128,21 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    if await api.send_server_command('start', {'uid': uid}):
-        await query.answer(f'{instrument.name} started')
-    else:
-        await query.answer('Something went wrong')
+    match await api.send_server_command('start', {'uid': uid}):
+        case 200:
+            await query.answer(f'{instrument.name} started')
+        case 409:
+            await query.answer(f'{instrument.name} already running')
+        case 403:
+            m = await query.message.answer(
+                'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"')
+            await query.answer(f'{instrument.name} not started')
+            await asyncio.sleep(3)
+            await m.delete()
+        case 500:
+            await query.message.answer(
+                'Ошибка на сервере, аопробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
+            await query.answer(f'{instrument.name} not started')
 
 
 @router.callback_query(InstrumentCallback.filter(F.act == 'stop'))

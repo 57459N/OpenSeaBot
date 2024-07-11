@@ -37,7 +37,7 @@ class UserInfo:
 
         with open(self.path, 'w') as f:
             # Convert the status to its string value for saving
-            json.dump(self.__dict__, f)
+            json.dump(asdict(self), f)
 
     def increase_balance_and_activate(self, amount: float):
         self.balance += amount
@@ -45,11 +45,13 @@ class UserInfo:
             self.balance -= config.sub_cost
             self.status = UserStatus.active
 
-    def decrease_balance_or_deactivate(self, amount: float):
+    def decrease_balance_or_deactivate(self, amount: float) -> bool:
         if self.balance < config.sub_cost:
             self.status = UserStatus.inactive
+            return False
         else:
             self.balance -= amount
+            return True
 
     def __enter__(self):
         self.load()

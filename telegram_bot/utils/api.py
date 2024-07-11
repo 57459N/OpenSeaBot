@@ -10,7 +10,6 @@ from telegram_bot.utils.instrument import Instrument, Instruments
 from telegram_bot.config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
-
 # todo: call the API
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
     logging.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
@@ -20,7 +19,6 @@ async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
                 return await resp.json()
             elif resp.status == 404:
                 return {}
-
 
 
 # Checks if user is subscribed
@@ -95,15 +93,14 @@ INSTRUMENTS = Instruments(
 )
 
 
-async def send_server_command(command: str, data: dict[str, Any]) -> bool | dict:
+async def send_server_command(command: str, data: dict[str, Any]) -> int | dict:
     async with aiohttp.ClientSession() as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}'
         async with session.get(url) as resp:
             if 'json' in resp.content_type:
                 return await resp.json()
-            elif 200 <= resp.status < 300:
-                return True
-            return False
+            else:
+                return resp.status
 
 
 async def increase_user_balance(uid, paid_amount, token):
@@ -111,4 +108,3 @@ async def increase_user_balance(uid, paid_amount, token):
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/increase_balance?uid={uid}&amount={paid_amount}&token={token}'
         async with session.get(url) as resp:
             return 200 <= resp.status < 300
-

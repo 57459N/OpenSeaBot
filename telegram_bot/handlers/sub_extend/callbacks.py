@@ -55,7 +55,7 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
 
     async def handle_payment():
 
-        paid_amount = 59
+        paid_amount = 259
         await asyncio.sleep(5)
 
         # todo: UNCOMMENT WITH REAL PAYMENT SYSTEM
