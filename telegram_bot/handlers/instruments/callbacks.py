@@ -1,10 +1,10 @@
 import asyncio
-from copy import copy, deepcopy
+from copy import deepcopy
 
 from aiogram import Router, F, types, flags
 from aiogram.fsm.context import FSMContext
 
-from telegram_bot import config
+import config
 from telegram_bot.handlers.callbacks_data import InstrumentCallback
 from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
 

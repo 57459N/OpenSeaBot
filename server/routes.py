@@ -8,7 +8,7 @@ from aiohttp import web
 import aiohttp
 
 from misc import create_unit, init_unit, validate_token, unit_exists
-from server import config
+import config
 from server.user_info import UserInfo, UserStatus
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -181,5 +181,5 @@ async def get_user_info_handler(request):
 
     with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
-        dict_ui['days_left'] = dict_ui['balance'] // config.sub_cost
+        dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
         return web.json_response(dict_ui)

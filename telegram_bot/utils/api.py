@@ -1,13 +1,11 @@
 import asyncio
 import logging
-import random
 from typing import Any
-from datetime import datetime
 import aiohttp
 from aiogram import Bot, types
 
 from telegram_bot.utils.instrument import Instrument, Instruments
-from telegram_bot.config import SERVER_HOST_IP, SERVER_HOST_PORT
+from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
 # todo: call the API

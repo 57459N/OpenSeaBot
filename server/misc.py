@@ -12,14 +12,22 @@ from subprocess import Popen
 import aiohttp
 from aiohttp import web
 
-from server import config
+import config
 from server.user_info import UserInfo, UserStatus
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
-async def _get_proxies(uid: int) -> list[str]:
-    return ['proxy1', 'proxy2', 'proxy3']
+async def _get_proxies(filepath: str, amount: int) -> list[str]:
+    with open('.free_proxies', 'r') as _in:
+        lines = _in.readlines()
+        if len(lines) < amount:
+            raise IndexError(f'Not enough free proxies. Need {amount}, but got only {len(lines)} in {filepath}')
+
+    with open('.free_proxies', 'w') as _out:
+        _out.writelines(lines[amount:])
+
+    return list(map(lambda x: x.strip(), lines[:amount]))
 
 
 async def _get_private_key(uid: int) -> str:
@@ -92,7 +100,7 @@ def init_unit(uid: str) -> Unit:
 
 
 def validate_token(token: str) -> bool:
-    return token == config.token
+    return token == config.BOT_API_TOKEN
 
 
 def unit_exists(uid: int) -> bool:
@@ -101,9 +109,11 @@ def unit_exists(uid: int) -> bool:
 
 async def daily_sub_balance_decrease(app: web.Application):
     while True:
+        # todo: maybe rewrite tax collection period to use config's parameter
         now = datetime.now()
         midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
         seconds_until_midnight = (midnight - now).total_seconds()
+
         logging.info(
             f"SERVER:DAILY_SUB_BALANCE_DECREASE: sleeping {seconds_until_midnight} seconds till next tax collection")
         await asyncio.sleep(seconds_until_midnight)
@@ -123,7 +133,7 @@ async def daily_sub_balance_decrease(app: web.Application):
                                     await session.get(url=f"http://127.0.0.1:{app['active_units'][uid].port}/stop")
                         continue
 
-                    if ui.decrease_balance_or_deactivate(config.sub_cost):
+                    if ui.decrease_balance_or_deactivate(config.SUB_COST):
                         logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is paid")
                     else:
                         logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is not paid")
@@ -131,3 +141,9 @@ async def daily_sub_balance_decrease(app: web.Application):
             except ValueError as e:
                 logging.warning(
                     f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} directory doesn't contain .userinfo file\n{e}")
+
+
+async def send_message_to_support(message: str):
+    async with aiohttp.ClientSession() as session:
+        await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
+                           data={'chat_id': config.SUPPORT_USERNAME, 'text': message})

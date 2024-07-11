@@ -1,6 +1,4 @@
-import itertools
-import os
-from telegram_bot import config
+import config
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder

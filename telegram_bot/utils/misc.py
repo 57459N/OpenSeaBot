@@ -3,7 +3,6 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import as_key_value, as_list, Bold, Text
 
-
 # Function to check if user is admin
 # todo: remove return True IN PRODUCTION
 async def is_user_admin(uid: int) -> bool:

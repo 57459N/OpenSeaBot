@@ -8,12 +8,11 @@ from datetime import datetime, timedelta
 from aiogram import Router, flags, types
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
 from aiogram.utils.formatting import Code
 
-from telegram_bot import config
+import config
 from telegram_bot.handlers.sub_extend.states import SubExtendStates
-from telegram_bot.utils import api, payments
+from telegram_bot.utils import api
 import telegram_bot.utils.keyboards as kbs
 
 router = Router()

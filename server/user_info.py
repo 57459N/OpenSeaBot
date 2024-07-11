@@ -3,7 +3,7 @@ import os.path
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-from server import config
+import config
 
 
 class UserStatus(str, Enum):
@@ -41,12 +41,12 @@ class UserInfo:
 
     def increase_balance_and_activate(self, amount: float):
         self.balance += amount
-        if self.status == UserStatus.inactive and self.balance >= config.sub_cost:
-            self.balance -= config.sub_cost
+        if self.status == UserStatus.inactive and self.balance >= config.SUB_COST:
+            self.balance -= config.SUB_COST
             self.status = UserStatus.active
 
     def decrease_balance_or_deactivate(self, amount: float) -> bool:
-        if self.balance < config.sub_cost:
+        if self.balance < config.SUB_COST:
             self.status = UserStatus.inactive
             return False
         else:
