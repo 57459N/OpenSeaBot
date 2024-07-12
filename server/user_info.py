@@ -1,6 +1,6 @@
 import json
 import os.path
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, InitVar
 from enum import Enum
 
 import config
@@ -14,10 +14,13 @@ class UserStatus(str, Enum):
 
 @dataclass
 class UserInfo:
-    status: str
-    balance: float
+    path: InitVar[str] = None
 
-    def __init__(self, path: str):
+    status: str = UserStatus.inactive.value
+    balance: float = 0.0
+    const_bot_wallet: str = ""
+
+    def __post_init__(self, path: str):
         if not os.path.exists(path):
             raise ValueError(f'UserInfo file not found')
 
@@ -29,14 +32,10 @@ class UserInfo:
     def load(self):
         with open(self.path, 'r') as f:
             _json = json.load(f)
-
-        self.status = _json['status']
-        self.balance = _json['balance']
+            self.__dict__.update(_json)
 
     def save(self):
-
         with open(self.path, 'w') as f:
-            # Convert the status to its string value for saving
             json.dump(asdict(self), f)
 
     def increase_balance_and_activate(self, amount: float):

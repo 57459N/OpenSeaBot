@@ -7,7 +7,7 @@ from dataclasses import asdict
 from aiohttp import web
 import aiohttp
 
-from misc import create_unit, init_unit, validate_token, unit_exists
+from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support
 import config
 from server.user_info import UserInfo, UserStatus
 
@@ -159,6 +159,7 @@ async def increase_user_balance(request):
             request.app['active_units'][uid] = init_unit(uid)
         except Exception as e:
             logging.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not created\n{e}')
+            await send_message_to_support(e)
 
     with UserInfo(info_path) as ui:
         ui.increase_balance_and_activate(amount)
@@ -182,4 +183,7 @@ async def get_user_info_handler(request):
     with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
-        return web.json_response(dict_ui)
+        # todo: add `bot_balance` field to check bot balance from tg sub menu
+        # dict_ui['bot_balance']
+
+    return web.json_response(dict_ui)

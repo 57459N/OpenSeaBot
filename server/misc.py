@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import logging
 import os
 import shutil
@@ -11,8 +12,10 @@ from subprocess import Popen
 
 import aiohttp
 from aiohttp import web
+from cryptography.fernet import Fernet
 
 import config
+import payments
 from server.user_info import UserInfo, UserStatus
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -30,35 +33,37 @@ async def _get_proxies(filepath: str, amount: int) -> list[str]:
     return list(map(lambda x: x.strip(), lines[:amount]))
 
 
-async def _get_private_key(uid: int) -> str:
-    return "TODO: KEY"
-
-
-async def _encrypt_private_key(private_key: str, password: str) -> str:
-    return f"TODO: ENCRYPT KEY: {private_key}"
+async def _encrypt_private_key(private_key: str, password: str) -> bytes:
+    key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
+    return Fernet(key).encrypt(private_key.encode())
 
 
 async def create_unit(uid: int):
     try:
         shutil.copytree('./template', f'./units/{uid}', dirs_exist_ok=True)
-    except Exception as e:
-        text = f'Error with COPY TEMPLATE while creating unit for user {uid}'
-        logging.error(f'SERVER:CREATE_UNIT: {text}')
-        raise Exception(text) from e
+    except Exception:
+        logging.error(f'SERVER:CREATE_UNIT: Error with COPY TEMPLATE while creating unit for user {uid}')
+        raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при копировании шаблона')
+
+    try:
+        with open(f'./units/{uid}/data/private_key.txt', 'wb') as pk_o, UserInfo(f'./units/{uid}/.userinfo') as ui:
+            account = await payments.generate_account()
+
+            ui.const_bot_wallet = account['address']
+
+            private_key = account['secret']
+            encrypted = await _encrypt_private_key(private_key, '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
+            pk_o.write(encrypted)
+    except Exception:
+        logging.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')
+        raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при создании аккаунта бота')
 
     try:
         with open(f'./units/{uid}/proxies.txt', 'w') as f:
-            proxies = await _get_proxies(uid)
+            proxies = await _get_proxies('.free_proxies', config.PROXIES_PER_USER)
             f.write('\n'.join(proxies))
-
-        with open(f'./units/{uid}/data/private_key.txt', 'w') as f:
-            key = await _get_private_key(uid)
-            encrypted = await _encrypt_private_key(key, '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
-            f.write(encrypted)
-    except Exception as e:
-        text = f'Error with CONFIG FILES while creating unit for user {uid}'
-        logging.error(f'SERVER:CREATE_UNIT: {text}')
-        raise Exception(text) from e
+    except IndexError as e:
+        raise Exception(f'Не удалось создать юнит пользователя {uid}. Недостаточно свободных прокси\n{e}')
 
 
 def get_free_port() -> int | None:
@@ -144,6 +149,7 @@ async def daily_sub_balance_decrease(app: web.Application):
 
 
 async def send_message_to_support(message: str):
+    text = f'`❗OpenSea Bot Error Message❗\n\n{message}`'
     async with aiohttp.ClientSession() as session:
-        await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
-                           data={'chat_id': config.SUPPORT_USERNAME, 'text': message})
+        resp = await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
+                                  data={'chat_id': config.SUPPORT_UID, 'text': text})

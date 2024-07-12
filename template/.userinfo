@@ -1,4 +1,5 @@
 {
 "balance" : 0.0,
-"status" : "Inactive"
+"status" : "Inactive",
+"const_bot_wallet" : ""
 }

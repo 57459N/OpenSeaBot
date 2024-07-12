@@ -77,7 +77,10 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
     sub_info = await api.get_user_subscription_info_by_id(query.from_user.id)
     status = 'Активна' if sub_info.get('status', 'No info').lower() == 'active' else 'Не активна'
     days_left = sub_info.get('days_left', 'No info')
-    balance = sub_info.get('balance', 'No info')
+    own_balance = sub_info.get('balance', 'No info')
+    bot_wallet = sub_info.get('const_bot_wallet', 'No info')
+    bot_balance = sub_info.get('bot_balance', 'No info')
+
 
     text = f'''
 Привет, @{query.from_user.username}!
@@ -86,7 +89,10 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
 
 Статус подписки: {status}
 Осталось дней до конца подписки: {days_left}
-Ваш баланс: {balance}
+Ваш баланс: {own_balance}
+
+Баланс бота: {bot_balance}
+Кошелек бота: {bot_wallet}
 '''
     with suppress(TelegramBadRequest):
         await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard())

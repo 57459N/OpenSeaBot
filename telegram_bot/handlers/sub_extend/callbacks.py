@@ -11,6 +11,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Code
 
 import config
+import payments
 from telegram_bot.handlers.sub_extend.states import SubExtendStates
 from telegram_bot.utils import api
 import telegram_bot.utils.keyboards as kbs
@@ -109,7 +110,7 @@ class Wallet:
         self.address = address
         self.paid = paid
         if expires is None:
-            self.expires = datetime.now() + timedelta(seconds=config.WALLET_EXPIRE_SECONDS)
+            self.expires = datetime.now() + timedelta(seconds=config.TEMP_WALLET_EXPIRE_SECONDS)
         else:
             self.expires = expires
 
