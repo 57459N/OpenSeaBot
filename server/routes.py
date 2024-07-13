@@ -7,7 +7,7 @@ from dataclasses import asdict
 from aiohttp import web
 import aiohttp
 
-from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support
+from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, get_wallet_balance
 import config
 from server.user_info import UserInfo, UserStatus
 
@@ -169,6 +169,9 @@ async def increase_user_balance(request):
     return web.Response(status=200, text='OK')
 
 
+
+
+
 @routes.get('/user/get_info')
 async def get_user_info_handler(request):
     uid = request.rel_url.query.get('uid', None)
@@ -183,7 +186,6 @@ async def get_user_info_handler(request):
     with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
-        # todo: add `bot_balance` field to check bot balance from tg sub menu
-        # dict_ui['bot_balance']
+        dict_ui['bot_balance'] = await get_wallet_balance(ui.const_bot_wallet)
 
     return web.json_response(dict_ui)

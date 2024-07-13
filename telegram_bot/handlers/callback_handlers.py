@@ -92,7 +92,7 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
 Ваш баланс: {own_balance}
 
 Баланс бота: {bot_balance}
-Кошелек бота: {bot_wallet}
+Кошелек бота: {Code(bot_wallet).as_html()}
 '''
     with suppress(TelegramBadRequest):
         await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard())

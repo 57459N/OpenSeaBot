@@ -36,7 +36,7 @@ class UserInfo:
 
     def save(self):
         with open(self.path, 'w') as f:
-            json.dump(asdict(self), f)
+            json.dump(asdict(self), f, indent=2)
 
     def increase_balance_and_activate(self, amount: float):
         self.balance += amount

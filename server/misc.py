@@ -153,3 +153,7 @@ async def send_message_to_support(message: str):
     async with aiohttp.ClientSession() as session:
         resp = await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
                                   data={'chat_id': config.SUPPORT_UID, 'text': text})
+
+
+async def get_wallet_balance(const_bot_wallet: str) -> float | str:
+    return "TEST BOT BALANCE. TODO: IMPLEMENT"
