@@ -112,8 +112,25 @@ def get_admin_menu_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Выдача дней", callback_data='givedays'))
             .add(InlineKeyboardButton(text="Рассылка", callback_data='broadcast'))
+            .add(InlineKeyboardButton(text="Добавление прокси", callback_data='add_proxies'))
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .adjust(1, 1, 1)
+            .as_markup())
+
+
+def get_to_who_add_proxies_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Список свободных", callback_data='add_proxies_idle'))
+            .add(InlineKeyboardButton(text="Назад", callback_data='back'))
+            .adjust(1, 1)
+            .as_markup())
+
+
+def get_adding_proxies_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Готово", callback_data='add_proxies_finish'))
+            .add(InlineKeyboardButton(text="Назад", callback_data='back'))
+            .adjust(1, 1)
             .as_markup())
 
 

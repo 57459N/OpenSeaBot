@@ -8,7 +8,6 @@ from telegram_bot.utils.instrument import Instrument, Instruments
 from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
-# todo: call the API
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
     logging.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
     async with aiohttp.ClientSession() as session:
@@ -19,20 +18,14 @@ async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
                 return {}
 
 
-# Checks if user is subscribed
-# todo: call the API
 async def is_user_subscribed(uid: int) -> bool:
-    return True
+    return (await get_user_subscription_info_by_id(uid)) != {}
 
 
-# Checks if user subscription is active
-# todo: remove return True IN PRODUCTION
 async def is_users_sub_active(uid: int) -> bool:
     return (await get_user_subscription_info_by_id(uid))['status'] == 'Active'
 
 
-# Returns wallet address to extend user's subscription
-# todo: call the API
 async def get_wallet_to_extend_sub(uid):
     logging.info(f'WALLET: requesting wallet address for user uid={uid}')
     async with aiohttp.ClientSession() as session:
@@ -53,8 +46,8 @@ async def get_wallet_to_extend_sub(uid):
 #       'usernames': list of usernames or empty if type is not 'usernames'
 #   }
 # todo: call the API
-async def give_days(*usernames: str, to_who: str, amount: int):
-    logging.info(f'SUBS: requesting subs for {amount} days to {to_who} : {usernames}')
+async def give_days(*uids: str, amount: int):
+    logging.info(f'SUBS: requesting subs for {amount} days to {uids}')
 
 
 async def get_usernames(bot: Bot, status: str = None) -> list[str] | None:

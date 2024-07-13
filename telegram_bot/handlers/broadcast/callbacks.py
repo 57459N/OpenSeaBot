@@ -50,16 +50,15 @@ async def broadcast_confirm_callback_handler(query: types.CallbackQuery, state: 
         except TelegramBadRequest:
             pass
 
-    usernames = await api.get_usernames(query.bot, to_who)
-
-    await state.update_data(usernames=usernames)
+    uids = await api.get_user_ids(to_who)
+    await state.update_data(uids=uids)
 
     text = f'''
 \t{broadcast_text if broadcast_text else ' '}
 
 Вы уверены, что хотите оповестить?
 Кого: {to_who.capitalize()}
-Охват: {len(usernames)} пользователей'''
+Охват: {len(uids)} пользователей'''
 
     await send(query.from_user.id, query.bot, typee, text, photo, reply_markup=kbs.get_broadcast_confirm_keyboard())
     await query.answer()
@@ -69,7 +68,7 @@ async def broadcast_confirm_callback_handler(query: types.CallbackQuery, state: 
 @router.callback_query(lambda query: query.data == 'broadcast_confirm_yes', BroadcastStates.confirm)
 async def broadcast_action_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    usernames = set(map(lambda uname: '@' + uname.strip('@'), data['usernames']))
+    uids = set(data['uids'])
     broadcast_text = data['text']
     photo = data['photo']
     typee = data['typee']
@@ -80,14 +79,14 @@ async def broadcast_action_callback_handler(query: types.CallbackQuery, state: F
     new_message = await query.message.answer(f'Оповещение начато.')
 
     successful_count = 0
-    for user in usernames:
+    for user in uids:
         is_successful = int(await send(user, query.bot, typee, broadcast_text, photo))
         successful_count += int(is_successful)
         logging.info(f'BROADCAST: user:{user}, success:{is_successful}')
 
     await new_message.edit_text(
         f'Оповещение завершено.\n'
-        f'Доставлено {successful_count}/{len(usernames)} ({successful_count / len(usernames) * 100:.1f}%) сообщений.')
+        f'Доставлено {successful_count}/{len(uids)} ({successful_count / len(uids) * 100:.1f}%) сообщений.')
 
 
 async def send(user_id: int | str, bot: Bot, typee: str, text: str, photo: PhotoSize = None,

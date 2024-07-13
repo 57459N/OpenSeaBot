@@ -169,9 +169,6 @@ async def increase_user_balance(request):
     return web.Response(status=200, text='OK')
 
 
-
-
-
 @routes.get('/user/get_info')
 async def get_user_info_handler(request):
     uid = request.rel_url.query.get('uid', None)
@@ -189,3 +186,9 @@ async def get_user_info_handler(request):
         dict_ui['bot_balance'] = await get_wallet_balance(ui.const_bot_wallet)
 
     return web.json_response(dict_ui)
+
+
+@routes.post('/server/add_idle_proxies')
+async def add_idle_proxies_handler(request):
+    proxies = await request.post()
+    print(proxies)

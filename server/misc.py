@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from socket import socket, AF_INET, SOCK_STREAM
 from subprocess import Popen
 
+import aiofiles
 import aiohttp
 from aiohttp import web
 from cryptography.fernet import Fernet
@@ -22,12 +23,12 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 async def _get_proxies(filepath: str, amount: int) -> list[str]:
-    with open('.free_proxies', 'r') as _in:
+    with open('.idle_proxies', 'r') as _in:
         lines = _in.readlines()
         if len(lines) < amount:
             raise IndexError(f'Not enough free proxies. Need {amount}, but got only {len(lines)} in {filepath}')
 
-    with open('.free_proxies', 'w') as _out:
+    with open('.idle_proxies', 'w') as _out:
         _out.writelines(lines[amount:])
 
     return list(map(lambda x: x.strip(), lines[:amount]))
@@ -60,7 +61,7 @@ async def create_unit(uid: int):
 
     try:
         with open(f'./units/{uid}/proxies.txt', 'w') as f:
-            proxies = await _get_proxies('.free_proxies', config.PROXIES_PER_USER)
+            proxies = await _get_proxies('.idle_proxies', config.PROXIES_PER_USER)
             f.write('\n'.join(proxies))
     except IndexError as e:
         raise Exception(f'Не удалось создать юнит пользователя {uid}. Недостаточно свободных прокси\n{e}')
@@ -155,5 +156,26 @@ async def send_message_to_support(message: str):
                                   data={'chat_id': config.SUPPORT_UID, 'text': text})
 
 
+# from web3 import Web3, AsyncHTTPProvider
+# from web3.eth import AsyncEth
+
 async def get_wallet_balance(const_bot_wallet: str) -> float | str:
+    # w3 = Web3(
+    #         Web3.AsyncHTTPProvider(
+    #             "https://1rpc.io/eth",
+    #             request_kwargs={"ssl": False}
+    #         ),
+    #         modules={"eth": (AsyncEth,)},
+    #         middlewares=[]
+    #     )
+    # balance = await w3.eth.get_balance(const_bot_wallet)
+    # return w3.from_wei(balance, 'ether')
+
     return "TEST BOT BALANCE. TODO: IMPLEMENT"
+
+async def add_proxies(proxies: list[str]):
+    def process(proxy: str):
+        return proxy.strip() + '\n'
+
+    async with aiofiles.open('.idle_proxies', 'a') as f:
+        await f.writelines(list(map(process, proxies)))

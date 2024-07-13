@@ -73,10 +73,12 @@ async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery,
 @flags.backable()
 async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    usernames = await api.get_usernames(query.bot, data['to_who'])
+    users = await api.get_users(query.bot, data['to_who'])
+    usernames = [u.username for u in users if u.username]
+    username_to_id = {u.username: u.id for u in users if u.username}
 
     await state.set_state(GiveDaysStates.choosing_usernames)
-    await state.update_data(options=usernames, selected_options=set())
+    await state.update_data(options=usernames, selected_options=set(), username_to_id=username_to_id)
     await query.message.edit_text(text='Выберите пользователей:',
                                   reply_markup=kbs.get_choose_keyboard(options=usernames))
     await query.answer()
@@ -117,14 +119,16 @@ async def givedays_amount_callback_handler(query: types.CallbackQuery, state: FS
 async def givedays_confirm_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     amount = data['amount']
-    to_who = data['to_who']
+    usernames = data['selected_options']
+    username_to_id = data["username_to_id"]
+    uids = tuple(username_to_id[name] for name in usernames)
     # another time verify that after all back buttons usernames does not contain something
-    usernames = tuple(data.get('usernames', [])) if to_who == 'usernames' else ()
-    await api.give_days(*usernames,
-                        to_who=to_who,
+
+    await api.give_days(*uids,
+
                         amount=amount)
 
     await state.clear()
     await query.answer()
-    await query.message.answer(f"SUBS: requesting subs for {amount} days to {to_who} : {usernames}")
+    await query.message.answer(f"SUBS: requesting subs for {amount} days to {uids}")
     await query.message.delete()
