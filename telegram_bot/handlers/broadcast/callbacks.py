@@ -1,4 +1,6 @@
-import logging
+import sys
+
+import loguru
 
 from aiogram import Router, flags, types, Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
@@ -82,7 +84,7 @@ async def broadcast_action_callback_handler(query: types.CallbackQuery, state: F
     for user in uids:
         is_successful = int(await send(user, query.bot, typee, broadcast_text, photo))
         successful_count += int(is_successful)
-        logging.info(f'BROADCAST: user:{user}, success:{is_successful}')
+        loguru.logger.info(f'BROADCAST: user:{user}, success:{is_successful}')
 
     await new_message.edit_text(
         f'Оповещение завершено.\n'
@@ -98,5 +100,5 @@ async def send(user_id: int | str, bot: Bot, typee: str, text: str, photo: Photo
             await bot.send_message(chat_id=user_id, text=text, reply_markup=reply_markup)
         return True
     except (TelegramBadRequest, TelegramForbiddenError) as e:
-        logging.warning(f'BROADCAST: user:{user_id}: {e.label}: {e.message}')
+        loguru.logger.warning(f'BROADCAST: user:{user_id}: {e.label}: {e.message}')
     return False

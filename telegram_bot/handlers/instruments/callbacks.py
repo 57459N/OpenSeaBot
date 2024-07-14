@@ -58,7 +58,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
                                                 state: FSMContext):
     uid = query.from_user.id
     instrument = api.INSTRUMENTS[callback_data.inst]
-    settings = await api.send_server_command('get_settings', {'uid': uid})
+    settings = await api.send_unit_command(uid, 'get_settings')
     if settings is False:
         await query.answer('Error while getting settings')
         return
@@ -113,12 +113,15 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    if not await api.send_server_command('set_settings', {'uid': uid, **settings}):
-        await query.answer('Something went wrong. Please try again later...')
-        return
-
-    await query.message.edit_text(f"{instrument.name}'s settings set successfully")
-    await go_back(query, state, new_message=True, delete_old_message=False)
+    resp = await api.send_unit_command(uid, 'set_settings', settings)
+    match resp.status:
+        case 200:
+            await query.message.edit_text(f"{instrument.name}'s settings set successfully")
+            await go_back(query, state, new_message=True, delete_old_message=False)
+        case 400, 404:
+            await query.message.answer('Произошла внутренняя ошибка. Пожалуйста обратитесь в поддержку')
+        case 409:
+            await query.message.answer(await resp.text())
 
     await query.answer()
 
@@ -128,20 +131,23 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    match await api.send_server_command('start', {'uid': uid}):
+    resp = await api.send_unit_command(uid, 'start')
+    match resp.status:
         case 200:
             await query.answer(f'{instrument.name} started')
         case 409:
-            await query.answer(f'{instrument.name} already running')
+            await query.answer(await resp.text())
         case 403:
-            m = await query.message.answer(
-                'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"')
-            await query.answer(f'{instrument.name} not started')
-            await asyncio.sleep(3)
-            await m.delete()
-        case 500:
+            await query.answer(
+                'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"',
+                show_alert=True)
+        case 503:
             await query.message.answer(
-                'Ошибка на сервере, аопробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
+                'К сожалению вам не предоставили прокси. Обратитесь в поддержку для решения данной проблемы',
+                reply_markup=kbs.get_support_keyboard())
+        case _:
+            await query.message.answer(
+                'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
             await query.answer(f'{instrument.name} not started')
 
 
@@ -149,8 +155,13 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
 async def instruments_start_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
-
-    if await api.send_server_command('stop', {'uid': uid}):
-        await query.answer(f'{instrument.name} started')
-    else:
-        await query.answer('Something went wrong')
+    resp = await api.send_unit_command(uid, 'stop')
+    match resp.status:
+        case 200:
+            await query.answer(f'{instrument.name} stopped')
+        case 409:
+            await query.answer(f'{instrument.name} is not running', show_alert=True)
+        case _:
+            await query.message.answer(
+                'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
+            await query.answer(f'{instrument.name} not stopped')

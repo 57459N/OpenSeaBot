@@ -125,7 +125,6 @@ async def givedays_confirm_callback_handler(query: types.CallbackQuery, state: F
     # another time verify that after all back buttons usernames does not contain something
 
     await api.give_days(*uids,
-
                         amount=amount)
 
     await state.clear()

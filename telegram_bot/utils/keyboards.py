@@ -200,6 +200,7 @@ def get_broadcast_confirm_keyboard():
 
 def get_dev_keyboard():
     return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="AddProxies", callback_data='dev_add_proxies'))
             .add(InlineKeyboardButton(text="Create", callback_data='dev_create'))
             .add(InlineKeyboardButton(text="Start", callback_data='dev_start'))
             .add(InlineKeyboardButton(text="Stop", callback_data='dev_stop'))
@@ -208,6 +209,7 @@ def get_dev_keyboard():
                                                                                          param='None').pack()))
 
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
+            .adjust(2,2,1)
             .as_markup())
 
 

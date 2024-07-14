@@ -1,12 +1,12 @@
 import os
 import random
 from contextlib import suppress
-from typing import Awaitable
+from typing import Awaitable, Any
 
 from aiohttp import web
 import asyncio
 import sys
-import logging
+import loguru
 
 from utils.database import change_work_statement, get_data_from_db, get_settings_data_from_db, update_settings_database
 from collections_parser.parser import collections_update_handler, collections_prices_handler
@@ -14,7 +14,7 @@ from bidder.bidder_client import work_client
 
 routes = web.RouteTableDef()
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+loguru.logger.add(sys.stdout)
 
 unit_port = -1
 unit_uid = int(os.getcwd().split('\\')[-1])
@@ -24,39 +24,45 @@ unit_uid = int(os.getcwd().split('\\')[-1])
 async def start_get(request):
     is_running = await get_data_from_db()
     if is_running:
-        logging.warning(f'UNIT:START: unit {unit_uid} is already running')
+        loguru.logger.warning(f'UNIT:START: unit {unit_uid} is already running')
         return web.Response(status=409, text=f'Unit {unit_uid} is already running')
+
+    if os.path.getsize(f'proxies.txt') == 0:
+        loguru.logger.error(f'UNIT:START: proxies.txt is empty')
+        return web.Response(status=503, text=f'No proxies provided')
+
+
 
     await change_work_statement({"work_statement": True})  # True - софт пашет | False - останавливается
     await start_program()
-    logging.info(f'UNIT:START: unit {unit_uid} started')
+    loguru.logger.info(f'UNIT:START: unit {unit_uid} started')
 
     return web.Response(text='Unit started')
+
 
 @routes.get('/is_running')
 async def is_running_get(request):
     is_running = await get_data_from_db()
     if is_running:
-        logging.info(f'UNIT:IS_RUNNING: unit {unit_uid} is running')
+        loguru.logger.info(f'UNIT:IS_RUNNING: unit {unit_uid} is running')
         return web.Response(text='True')
     else:
-        logging.info(f'UNIT:IS_RUNNING: unit {unit_uid} is not running')
+        loguru.logger.info(f'UNIT:IS_RUNNING: unit {unit_uid} is not running')
         return web.Response(text='False')
 
 
 @routes.get('/stop')
 async def stop_get(request):
-    logging.info('STOP')
+    loguru.logger.info('STOP')
     is_running = await get_data_from_db()
     if not is_running:
-        logging.warning(f'UNIT:STOP: unit {unit_uid} is not running')
+        loguru.logger.warning(f'UNIT:STOP: unit {unit_uid} is not running')
         return web.Response(status=409, text=f'Unit {unit_uid} is not running')
     else:
         await change_work_statement({"work_statement": False})  # True - софт пашет | False - останавливается
 
-        logging.info(f'UNIT:STOP: unit {unit_uid} stopped')
+        loguru.logger.info(f'UNIT:STOP: unit {unit_uid} stopped')
         return web.Response(text='Unit stopped')
-
 
 
 @routes.get('/get_settings')
@@ -66,14 +72,34 @@ async def get_settings_get(request):
         'profit': settings['profit'],
         **settings['collections_parser']
     }
-    logging.info(f'UNIT:GET_SETTINGS: unit {unit_uid} getting settings')
+    loguru.logger.info(f'UNIT:GET_SETTINGS: unit {unit_uid} getting settings')
     return web.json_response(settings)
+
+
+def validate_settings(data: dict[str, Any]) -> str | None:
+    '''
+    :returns str with first invalid parameter or None if all is good
+    '''
+    # all values are numeric
+    for k, v in data.items():
+        if not isinstance(v, float) or not isinstance(v, int):
+            return k
+
+    # all needed fields are presented
+    fields = ['min_price', 'max_price', 'min_one_day_sellings', 'min_one_day_volume', 'offer_difference_percent',
+              'profit']
+    for f in fields:
+        if f not in data:
+            return f
 
 
 @routes.post('/set_settings')
 async def set_settings_post(request: web.Request):
     settings = await request.post()
     try:
+        if parameter := validate_settings(settings):
+            return web.Response(status=409, text=f'Неправильно задан параметр {parameter}')
+
         with open('proxies.txt') as file:
             proxies = [row.strip() for row in file.readlines()]
 
@@ -97,9 +123,9 @@ async def set_settings_post(request: web.Request):
             }
         )
     except Exception as e:
-        logging.error(f'UNIT:SET_SETTINGS: {unit_uid} {str(e)}')
+        loguru.logger.error(f'UNIT:SET_SETTINGS: {unit_uid} {str(e)}')
         return web.Response(status=500, text=str(e))
-    logging.info(f'UNIT:SET_SETTINGS: {unit_uid} settings updated successfully')
+    loguru.logger.info(f'UNIT:SET_SETTINGS: {unit_uid} settings updated successfully')
     return web.Response(text='Settings updated')
 
 

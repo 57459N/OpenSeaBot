@@ -1,5 +1,5 @@
 import asyncio
-import logging
+import loguru
 import sys
 
 from aiogram import Bot, Dispatcher
@@ -19,6 +19,8 @@ from telegram_bot.handlers.add_proxies import router as add_proxies_router
 import config
 
 TOKEN = config.BOT_API_TOKEN
+
+loguru.logger.add(sys.stdout)
 
 
 async def main() -> None:
@@ -43,5 +45,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())

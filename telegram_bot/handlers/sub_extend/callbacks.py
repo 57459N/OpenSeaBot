@@ -1,6 +1,8 @@
 import asyncio
 import dataclasses
-import logging
+import sys
+
+import loguru
 from asyncio import CancelledError
 from contextlib import suppress
 from datetime import datetime, timedelta
@@ -46,7 +48,7 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
     # todo: UNCOMMENT WITH REAL PAYMENT SYSTEM
     # account = await payments.generate_account()
     # wallet = Wallet(address=account['address'], expires=datetime.now() + timedelta(seconds=180))
-    logging.info(f'SUB_EXTEND: generating wallet for {uid}')
+    loguru.logger.info(f'SUB_EXTEND: generating wallet for {uid}')
     # todo: change address to address from account
     wallet = Wallet(address=('TEST WALLET ACC ADDRESS'))
 
@@ -80,11 +82,11 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
             if await api.increase_user_balance(uid, paid_amount, query.bot.token):
                 text = f'На баланс зачислено {paid_amount}. Благодарим за оплату'
                 kb = kbs.get_delete_keyboard()
-                logging.info(f'SUB_EXTEND: payment got {paid_amount} from user {uid}')
+                loguru.logger.info(f'SUB_EXTEND: payment got {paid_amount} from user {uid}')
             else:
                 text = 'Ошибка при пополнении баланса. Сообщите администратору'
                 kb = kbs.get_support_keyboard()
-                logging.error(f'SUB_EXTEND: payment error for user {uid}')
+                loguru.logger.error(f'SUB_EXTEND: payment error for user {uid}')
             try:
                 await query.message.edit_text(text=text, reply_markup=kb)
             except TelegramBadRequest:

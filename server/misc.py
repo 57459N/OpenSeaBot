@@ -1,6 +1,6 @@
 import asyncio
 import hashlib
-import logging
+import loguru
 import os
 import shutil
 import sys
@@ -18,8 +18,6 @@ from cryptography.fernet import Fernet
 import config
 import payments
 from server.user_info import UserInfo, UserStatus
-
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 async def _get_proxies(filepath: str, amount: int) -> list[str]:
@@ -43,7 +41,7 @@ async def create_unit(uid: int):
     try:
         shutil.copytree('./template', f'./units/{uid}', dirs_exist_ok=True)
     except Exception:
-        logging.error(f'SERVER:CREATE_UNIT: Error with COPY TEMPLATE while creating unit for user {uid}')
+        loguru.logger.error(f'SERVER:CREATE_UNIT: Error with COPY TEMPLATE while creating unit for user {uid}')
         raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при копировании шаблона')
 
     try:
@@ -56,7 +54,7 @@ async def create_unit(uid: int):
             encrypted = await _encrypt_private_key(private_key, '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
             pk_o.write(encrypted)
     except Exception:
-        logging.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')
+        loguru.logger.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')
         raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при создании аккаунта бота')
 
     try:
@@ -96,12 +94,12 @@ class Unit:
 def init_unit(uid: str) -> Unit:
     port = get_free_port()
     if not os.path.exists(f'./units/{uid}/unit.py'):
-        logging.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
+        loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
         return None
 
     process = Popen([sys.executable, f'unit.py', f'{port}'], cwd=f'./units/{uid}')
     unit = Unit(port=port, process=process)
-    logging.info(f'SERVER:INIT_UNIT: unit {uid} initialized on port {port}')
+    loguru.logger.info(f'SERVER:INIT_UNIT: unit {uid} initialized on port {port}')
     return unit
 
 
@@ -120,7 +118,7 @@ async def daily_sub_balance_decrease(app: web.Application):
         midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
         seconds_until_midnight = (midnight - now).total_seconds()
 
-        logging.info(
+        loguru.logger.info(
             f"SERVER:DAILY_SUB_BALANCE_DECREASE: sleeping {seconds_until_midnight} seconds till next tax collection")
         await asyncio.sleep(seconds_until_midnight)
 
@@ -140,12 +138,12 @@ async def daily_sub_balance_decrease(app: web.Application):
                         continue
 
                     if ui.decrease_balance_or_deactivate(config.SUB_COST):
-                        logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is paid")
+                        loguru.logger.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is paid")
                     else:
-                        logging.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is not paid")
+                        loguru.logger.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is not paid")
 
             except ValueError as e:
-                logging.warning(
+                loguru.logger.warning(
                     f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} directory doesn't contain .userinfo file\n{e}")
 
 
@@ -173,9 +171,10 @@ async def get_wallet_balance(const_bot_wallet: str) -> float | str:
 
     return "TEST BOT BALANCE. TODO: IMPLEMENT"
 
-async def add_proxies(proxies: list[str]):
+
+async def add_proxies(filepath: str, proxies: list[str]):
     def process(proxy: str):
         return proxy.strip() + '\n'
 
-    async with aiofiles.open('.idle_proxies', 'a') as f:
+    async with aiofiles.open(filepath, 'a') as f:
         await f.writelines(list(map(process, proxies)))

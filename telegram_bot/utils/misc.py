@@ -1,5 +1,8 @@
+from contextlib import suppress
+
 import aiofiles
 from aiogram import types
+from aiogram.exceptions import TelegramNetworkError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import as_key_value, as_list, Bold, Text
 
@@ -23,24 +26,26 @@ def get_settings_beautiful_list(settings: dict[str, str], active: str = None, he
 
 
 async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=False, delete_old_message=False):
-    data = await state.get_data()
-    previous_state = data.get('previous_state')
-    previous_data = data.get('previous_data')
-    previous_keyboard = data.get('previous_keyboard')
-    previous_text = data.get('previous_text')
+    with suppress(TelegramNetworkError):
+        data = await state.get_data()
+        previous_state = data.get('previous_state')
+        previous_data = data.get('previous_data')
+        previous_keyboard = data.get('previous_keyboard')
+        previous_text = data.get('previous_text')
 
-    # means that previous event was message and we dont need to create new message
-    if previous_keyboard is None:
-        await query.message.delete()
-    elif new_message:
-        if delete_old_message:
-            await query.message.delete()
+        # means that previous event was message and we dont need to create new message
+        with suppress(TelegramBadRequest):
+            if previous_keyboard is None:
+                await query.message.delete()
+            elif new_message:
+                if delete_old_message:
+                    await query.message.delete()
 
-        await query.message.answer(text=previous_text, reply_markup=previous_keyboard)
-    else:
-        await query.message.edit_text(text=previous_text, reply_markup=previous_keyboard)
+                await query.message.answer(text=previous_text, reply_markup=previous_keyboard)
+            else:
+                await query.message.edit_text(text=previous_text, reply_markup=previous_keyboard)
 
-    await state.set_state(previous_state)
-    await state.update_data(previous_data)
+        await state.set_state(previous_state)
+        await state.update_data(previous_data)
 
-    await query.answer()
+        await query.answer()

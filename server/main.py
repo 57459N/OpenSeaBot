@@ -1,7 +1,7 @@
 import asyncio
 import time
 from _datetime import datetime, timedelta
-import logging
+import loguru
 from contextlib import suppress
 
 import aiohttp
@@ -9,12 +9,11 @@ from aiohttp import web
 import sys
 import os
 from routes import routes
-from misc import init_unit, Unit
-from server import misc
+from misc import init_unit, Unit, daily_sub_balance_decrease
 
 
 async def daily_ctx(app: web.Application):
-    task = asyncio.create_task(misc.daily_sub_balance_decrease(app))
+    task = asyncio.create_task(daily_sub_balance_decrease(app))
     yield
     task.cancel()
     with suppress(asyncio.CancelledError):

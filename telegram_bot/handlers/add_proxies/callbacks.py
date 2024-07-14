@@ -42,8 +42,18 @@ async def add_proxies_finish_callback_handler(query: types.CallbackQuery, state:
         await query.answer('Список проксей пуст. Добавьте хотя бы одну ссылку', show_alert=True)
         return
 
-    # TODO: add api.
+    await api.add_proxies(proxies)
 
     await query.message.delete()
+    await state.clear()
+    await query.answer()
+
+
+@router.callback_query(lambda query: query.data == 'dev_add_proxies')
+async def add_proxies_idle_callback_handler(query: types.CallbackQuery, state: FSMContext):
+    proxies = ['proxy1', 'proxy2', 'proxy3']
+
+    await api.add_proxies(proxies)
+
     await state.clear()
     await query.answer()

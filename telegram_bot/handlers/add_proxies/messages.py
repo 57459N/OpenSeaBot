@@ -12,7 +12,7 @@ from .states import AddIdleProxiesStates
 router = Router()
 
 
-@router.message(AddIdleProxiesStates.to_who)
+@router.message(AddIdleProxiesStates.list)
 async def add_proxies_message_handler(message: types.Message, state: FSMContext):
     text = message.text
 

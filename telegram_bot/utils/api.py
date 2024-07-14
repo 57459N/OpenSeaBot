@@ -1,17 +1,22 @@
 import asyncio
-import logging
+import sys
+
+import loguru
 from typing import Any
 import aiohttp
 from aiogram import Bot, types
+from aiohttp import ClientResponse
+from aiohttp.web_response import Response
 
 from telegram_bot.utils.instrument import Instrument, Instruments
 from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
+
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
-    logging.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
+    loguru.logger.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
     async with aiohttp.ClientSession() as session:
-        async with session.get(f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/get_info?uid={uid}') as resp:
+        async with session.get(f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info') as resp:
             if resp.status == 200 and 'json' in resp.content_type:
                 return await resp.json()
             elif resp.status == 404:
@@ -26,18 +31,6 @@ async def is_users_sub_active(uid: int) -> bool:
     return (await get_user_subscription_info_by_id(uid))['status'] == 'Active'
 
 
-async def get_wallet_to_extend_sub(uid):
-    logging.info(f'WALLET: requesting wallet address for user uid={uid}')
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-                f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_wallet_to_extend_sub?uid={uid}') as resp:
-            if resp.status == 200 and 'json' in resp.content_type:
-                return await resp.json()
-            else:
-                logging.error(f'WALLET: error requesting wallet address for user uid={uid}\n{resp}')
-                return None
-
-
 # Gives specified type of users or users in usernames amount of days
 # Roughly post-request format:
 #   {
@@ -47,7 +40,7 @@ async def get_wallet_to_extend_sub(uid):
 #   }
 # todo: call the API
 async def give_days(*uids: str, amount: int):
-    logging.info(f'SUBS: requesting subs for {amount} days to {uids}')
+    loguru.logger.info(f'SUBS: requesting subs for {amount} days to {uids}')
 
 
 async def get_usernames(bot: Bot, status: str = None) -> list[str] | None:
@@ -62,7 +55,7 @@ async def get_users(bot: Bot, status: str = None) -> tuple[types.ChatFullInfo] |
 
 
 async def get_user_ids(status: str = None) -> list[int] | None:
-    logging.info('USER_IDS: requesting user_ids from server')
+    loguru.logger.info('USER_IDS: requesting user_ids from server')
     async with aiohttp.ClientSession() as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids'
         async with session.get(url) as resp:
@@ -72,9 +65,9 @@ async def get_user_ids(status: str = None) -> list[int] | None:
                 else:
                     raise ValueError('Bad response')
             except ValueError:
-                logging.error('USER_IDS: bad response type, expected json')
+                loguru.logger.error('USER_IDS: bad response type, expected json')
             except KeyError:
-                logging.error('USER_IDS: bad response, expected `user_ids` key')
+                loguru.logger.error('USER_IDS: bad response, expected `user_ids` key')
             return None
 
 
@@ -84,18 +77,27 @@ INSTRUMENTS = Instruments(
 )
 
 
-async def send_server_command(command: str, data: dict[str, Any]) -> int | dict:
+async def send_unit_command(uid: int | str, command: str, data=None) -> int | ClientResponse:
+    if data is None:
+        data = {}
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}'
         async with session.get(url) as resp:
             if 'json' in resp.content_type:
                 return await resp.json()
             else:
-                return resp.status
+                return resp
 
 
 async def increase_user_balance(uid, paid_amount, token):
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/increase_balance?uid={uid}&amount={paid_amount}&token={token}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/increase_balance?amount={paid_amount}&token={token}'
         async with session.get(url) as resp:
+            return 200 <= resp.status < 300
+
+
+async def add_proxies(proxies: list[str]) -> bool:
+    async with aiohttp.ClientSession() as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies'
+        async with session.post(url, json=proxies) as resp:
             return 200 <= resp.status < 300

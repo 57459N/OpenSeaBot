@@ -1,4 +1,6 @@
-import logging
+import sys
+
+import loguru
 import os
 
 from aiogram import Router, flags, types, Bot
@@ -12,25 +14,8 @@ from telegram_bot.utils import api
 router = Router()
 
 
+
 @router.callback_query(lambda query: query.data == 'dev_create')
 async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command('create', {'uid': query.from_user.id})
-    await query.answer()
-
-
-@router.callback_query(lambda query: query.data == 'dev_start')
-async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command('start', {'uid': query.from_user.id})
-    await query.answer()
-
-
-@router.callback_query(lambda query: query.data == 'dev_stop')
-async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command('stop', {'uid': query.from_user.id})
-    await query.answer()
-
-
-@router.callback_query(lambda query: query.data == 'dev_set_settings')
-async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await api.send_server_command('stop', {'uid': query.from_user.id})
+    await api.send_unit_command(query.from_user.id, 'create')
     await query.answer()
