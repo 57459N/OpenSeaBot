@@ -139,7 +139,8 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
             await query.answer(await resp.text())
         case 403:
             await query.answer(
-                'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"',
+                'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"\n'
+                'Если вы уже оплачивали подписку, обратитесь в поддержку',
                 show_alert=True)
         case 503:
             await query.message.answer(

@@ -12,7 +12,6 @@ from telegram_bot.utils.instrument import Instrument, Instruments
 from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
-
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
     loguru.logger.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
     async with aiohttp.ClientSession() as session:
@@ -28,7 +27,10 @@ async def is_user_subscribed(uid: int) -> bool:
 
 
 async def is_users_sub_active(uid: int) -> bool:
-    return (await get_user_subscription_info_by_id(uid))['status'] == 'Active'
+    info = await get_user_subscription_info_by_id(uid)
+    if status := info.get('status'):
+        return status == 'Active'
+    return False
 
 
 # Gives specified type of users or users in usernames amount of days

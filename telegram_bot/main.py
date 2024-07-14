@@ -20,7 +20,6 @@ import config
 
 TOKEN = config.BOT_API_TOKEN
 
-loguru.logger.add(sys.stdout)
 
 
 async def main() -> None:

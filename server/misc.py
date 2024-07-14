@@ -148,7 +148,7 @@ async def daily_sub_balance_decrease(app: web.Application):
 
 
 async def send_message_to_support(message: str):
-    text = f'`❗OpenSea Bot Error Message❗\n\n{message}`'
+    text = f'❗OpenSea Bot Error Message❗\n\n{message}'
     async with aiohttp.ClientSession() as session:
         resp = await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
                                   data={'chat_id': config.SUPPORT_UID, 'text': text})
