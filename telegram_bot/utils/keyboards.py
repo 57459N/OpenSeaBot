@@ -175,7 +175,7 @@ def get_confirm_keyboard():
 def get_broadcast_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Активным", callback_data='broadcast_active'))
-            .add(InlineKeyboardButton(text="Неактивным", callback_data='broadcast_nonactive'))
+            .add(InlineKeyboardButton(text="Неактивным", callback_data='broadcast_inactive'))
             .add(InlineKeyboardButton(text="Всем", callback_data='broadcast_all'))
             .add(InlineKeyboardButton(text="Назад", callback_data='back'))
             .adjust(1, 1, 1, 1)

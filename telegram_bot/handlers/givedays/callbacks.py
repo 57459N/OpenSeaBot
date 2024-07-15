@@ -119,15 +119,24 @@ async def givedays_amount_callback_handler(query: types.CallbackQuery, state: FS
 async def givedays_confirm_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     amount = data['amount']
-    usernames = data['selected_options']
-    username_to_id = data["username_to_id"]
-    uids = tuple(username_to_id[name] for name in usernames)
-    # another time verify that after all back buttons usernames does not contain something
+    to_who = data['to_who']
+    if to_who == 'usernames':
+        usernames = data.get("usernames")
+        username_to_id = data.get("username_to_id")
+        if username_to_id is None:
+            users = await api.get_users(query.bot)
+            username_to_id = {u.username: u.id for u in users if u.username}
+        uids = list(username_to_id[name] for name in usernames)
+    else:
+        uids = await api.get_user_ids(to_who)
 
-    await api.give_days(*uids,
-                        amount=amount)
+    errors = await api.give_days(uids, amount=amount)
+
+    text = f'Дни успешно выданы {len(uids) - len(errors)} пользователям\n\n'
+    if errors:
+        text += 'Ошибки:\n\t' + '\n\t'.join([f'{uid} : {err}' for uid, err in errors.items()])
+    await query.message.answer(text)
 
     await state.clear()
     await query.answer()
-    await query.message.answer(f"SUBS: requesting subs for {amount} days to {uids}")
     await query.message.delete()

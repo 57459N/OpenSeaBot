@@ -41,8 +41,21 @@ async def is_users_sub_active(uid: int) -> bool:
 #       'usernames': list of usernames or empty if type is not 'usernames'
 #   }
 # todo: call the API
-async def give_days(*uids: str, amount: int):
+async def give_days(uids: list[str], amount: int) -> dict[str, str]:
+    '''    returns {uid: error} dictionary    '''
     loguru.logger.info(f'SUBS: requesting subs for {amount} days to {uids}')
+    errors = {}
+    async with aiohttp.ClientSession() as session:
+        for uid in uids:
+            async with session.get(
+                    f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/give_days?amount={amount}') as resp:
+                if resp.status == 404 or resp.status == 409:
+                    text = await resp.text()
+                    loguru.logger.warning(f'SUBS: can not give days to {uid}\n{text}')
+                    errors[uid] = text
+                elif resp.status != 200:
+                    loguru.logger.warning(f'SUBS: Successfully gave {uid} {amount} days')
+    return errors
 
 
 async def get_usernames(bot: Bot, status: str = None) -> list[str] | None:
@@ -59,7 +72,7 @@ async def get_users(bot: Bot, status: str = None) -> tuple[types.ChatFullInfo] |
 async def get_user_ids(status: str = None) -> list[int] | None:
     loguru.logger.info('USER_IDS: requesting user_ids from server')
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids?status={status}'
         async with session.get(url) as resp:
             try:
                 if 'json' in resp.content_type:
@@ -84,6 +97,7 @@ async def send_unit_command(uid: int | str, command: str, data=None) -> int | Cl
         data = {}
     async with aiohttp.ClientSession() as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}'
+        loguru.logger.info(f'SEND_UNIT_COMMAND: send {command} to unit {uid}')
         async with session.get(url) as resp:
             if 'json' in resp.content_type:
                 return await resp.json()
@@ -94,6 +108,7 @@ async def send_unit_command(uid: int | str, command: str, data=None) -> int | Cl
 async def increase_user_balance(uid, paid_amount, token):
     async with aiohttp.ClientSession() as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/increase_balance?amount={paid_amount}&token={token}'
+        loguru.logger.info(f'INCREASE_USER_BALANCE: requesting increase balance for user {uid}')
         async with session.get(url) as resp:
             return 200 <= resp.status < 300
 
@@ -101,5 +116,6 @@ async def increase_user_balance(uid, paid_amount, token):
 async def add_proxies(proxies: list[str]) -> bool:
     async with aiohttp.ClientSession() as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies'
+        loguru.logger.info(f'ADD_PROXIES: adding {len(proxies)} proxies')
         async with session.post(url, json=proxies) as resp:
             return 200 <= resp.status < 300

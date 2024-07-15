@@ -25,7 +25,7 @@ async def broadcast_callback_handler(query: types.CallbackQuery, state: FSMConte
     await query.answer()
 
 
-@router.callback_query(lambda query: query.data in ['broadcast_all', 'broadcast_active', 'broadcast_nonactive'],
+@router.callback_query(lambda query: query.data in ['broadcast_all', 'broadcast_active', 'broadcast_inactive'],
                        BroadcastStates.to_who)
 @flags.backable()
 async def broadcast_who_callback_handler(query: types.CallbackQuery, state: FSMContext):

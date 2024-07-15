@@ -51,3 +51,4 @@ async def amount_message_handler(message: types.Message, state: FSMContext):
     messages_to_delete.append(message)
 
     await state.update_data(usernames=new_users, messages_to_delete=messages_to_delete)
+    pass

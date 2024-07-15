@@ -13,7 +13,6 @@ from misc import create_unit, init_unit, validate_token, unit_exists, send_messa
 import config
 from server.user_info import UserInfo, UserStatus
 
-
 routes = web.RouteTableDef()
 
 
@@ -22,7 +21,7 @@ async def unit_create_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
         loguru.logger.warning(f'SERVER:CREATE_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/create?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/create')
 
     try:
         await create_unit(uid)
@@ -41,7 +40,7 @@ async def unit_start_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
         loguru.logger.warning(f'SERVER:START_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/start?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/start')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:START_UNIT: unit {uid} not found')
@@ -68,7 +67,7 @@ async def unit_stop_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
         loguru.logger.warning(f'SERVER:STOP_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/stop?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/stop')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
@@ -86,7 +85,7 @@ async def get_settings_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
         loguru.logger.warning(f'SERVER:GET_SETTINGS: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/get_settings?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/get_settings')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:GET_SETTINGS: unit {uid} not found')
@@ -104,7 +103,7 @@ async def set_settings_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
         loguru.logger.warning(f'SERVER:START_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/set_settings?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/set_settings')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
@@ -127,7 +126,7 @@ async def increase_user_balance_handler(request: Request):
         loguru.logger.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
         return web.Response(status=400,
                             text='Provide `uid`, `amount` and `token` parameters into URL.'
-                                 ' For example: /user/increase_balance?uid=1&amount=10&token=123')
+                                 ' For example: /user/1/increase_balance?amount=10&token=123')
     try:
         amount = float(amount)
         a = int(uid)
@@ -135,7 +134,7 @@ async def increase_user_balance_handler(request: Request):
         loguru.logger.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
         return web.Response(status=400,
                             text='`uid` must be an integer\n`amount` must be a number. 777 or 3.14'
-                                 ' For example: /user/increase_balance?uid=1&amount=10&token=123')
+                                 ' For example: /user/1/increase_balance?amount=10&token=123')
 
     if validate_token(token) is False:
         loguru.logger.error(f'SERVER:INCREASE_USER_BALANCE: bad token trying to increase balance for {uid}')
@@ -161,12 +160,35 @@ async def increase_user_balance_handler(request: Request):
     return web.Response(status=200, text='OK')
 
 
+@routes.get('/user/{uid}/give_days')
+async def give_days_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    amount = request.rel_url.query.get('amount', None)
+
+    if amount is None or not amount.isdigit():
+        loguru.logger.warning(f'SERVER:GIVE_DAYS: bad request')
+        return web.Response(status=400,
+                            text='Provide `amount` parameter as number into URL. For example: /user/1/give_days?amount=10')
+
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    if os.path.exists(f'./units/{uid}/.userinfo'):
+        with UserInfo(f'./units/{uid}/.userinfo') as ui:
+            ui.increase_balance_and_activate(config.SUB_COST_DAY * int(amount))
+            loguru.logger.info(f'SERVER:GIVE_DAYS: {amount} days given to user {uid}')
+            return web.Response(status=200, text='OK')
+    else:
+        return web.Response(status=409, text=f'User {uid} config is not found.')
+
+
 @routes.get('/user/{uid}/get_info')
 async def get_user_info_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
         loguru.logger.warning(f'SERVER:GET_USER_INFO: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /user/get_info?uid=1')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /user/1/get_info')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:GET_USER_INFO: user {uid} not found')
@@ -200,9 +222,20 @@ async def add_idle_proxies_handler(request: Request):
 
 @routes.get('/server/get_user_ids')
 async def get_user_ids_handler(request: Request):
+    status: str | None = request.rel_url.query.get('status', None)
+
     user_ids = []
+    use_status = False
+    if status is not None and status.lower() != 'all':
+        use_status = True
+        status = status.capitalize()
+
     for file in os.listdir('./units'):
-        if os.path.isdir(f'./units/{file}') and file.isdigit():
-            user_ids.append(file)
+        if not os.path.isdir(f'./units/{file}') or not file.isdigit():
+            continue
+
+        with UserInfo(f'./units/{file}/.userinfo') as ui:
+            if not use_status or ui.status == status:
+                user_ids.append(file)
 
     return web.json_response({'user_ids': user_ids})
