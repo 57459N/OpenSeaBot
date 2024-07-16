@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import suppress
+
 import loguru
 import os
 from dataclasses import asdict
@@ -8,11 +10,22 @@ import aiohttp
 from aiohttp.web_request import Request
 
 import payments
-from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, add_proxies
+from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, add_proxies, delete_unit
 import config
 from server.user_info import UserInfo, UserStatus
 
 routes = web.RouteTableDef()
+
+
+@routes.get('/unit/{uid}/delete')
+async def unit_delete_handler(request: Request):
+    uid = request.match_info['uid']
+
+    try:
+        delete_unit(uid, request.app['active_units'])
+        return web.Response(text='OK', status=200)
+    except Exception as e:
+        return web.Response(status=500, text=str(e))
 
 
 @routes.get('/unit/{uid}/create')
@@ -28,6 +41,8 @@ async def unit_create_handler(request: Request):
         request.app['active_units'][uid] = init_unit(uid)
         await asyncio.sleep(1)
     except Exception as e:
+        with suppress(Exception):
+            delete_unit(uid, request.app['active_units'])
         return web.Response(status=500, text=str(e))
     loguru.logger.info(f'SERVER:CREATE_UNIT: unit {uid} created')
 

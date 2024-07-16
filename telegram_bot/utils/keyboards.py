@@ -113,8 +113,9 @@ def get_admin_menu_keyboard():
             .add(InlineKeyboardButton(text="Выдача дней", callback_data='givedays'))
             .add(InlineKeyboardButton(text="Рассылка", callback_data='broadcast'))
             .add(InlineKeyboardButton(text="Добавление прокси", callback_data='add_proxies'))
+            .add(InlineKeyboardButton(text="Создание юнита", callback_data='create_unit'))
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
-            .adjust(1, 1, 1)
+            .adjust(2, 2, 1)
             .as_markup())
 
 

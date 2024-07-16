@@ -14,12 +14,11 @@ from telegram_bot.handlers.broadcast import router as broadcast_router
 from telegram_bot.handlers.instruments import router as instruments_router
 from telegram_bot.handlers.sub_extend import router as sub_extend_router
 from telegram_bot.handlers.add_proxies import router as add_proxies_router
-
+from telegram_bot.handlers.create_unit import router as create_unit_router
 
 import config
 
 TOKEN = config.BOT_API_TOKEN
-
 
 
 async def main() -> None:
@@ -36,7 +35,8 @@ async def main() -> None:
         broadcast_router,
         instruments_router,
         dev_router,
-        add_proxies_router
+        add_proxies_router,
+        create_unit_router,
     )
 
     # Start polling

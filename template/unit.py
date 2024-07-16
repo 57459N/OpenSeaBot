@@ -14,8 +14,6 @@ from bidder.bidder_client import work_client
 
 routes = web.RouteTableDef()
 
-loguru.logger.add(sys.stdout)
-
 unit_port = -1
 unit_uid = int(os.getcwd().split('\\')[-1])
 

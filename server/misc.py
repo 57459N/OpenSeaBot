@@ -38,6 +38,10 @@ async def _encrypt_private_key(private_key: str, password: str) -> bytes:
 
 
 async def create_unit(uid: int):
+    if os.path.exists(f'./units/{uid}'):
+        loguru.logger.error(f'SERVER:CREATE_UNIT: Unit {uid} already exists')
+        raise Exception(f'Юнит {uid} уже существует')
+
     try:
         shutil.copytree('./template', f'./units/{uid}', dirs_exist_ok=True)
     except Exception:
@@ -55,14 +59,18 @@ async def create_unit(uid: int):
             pk_o.write(encrypted)
     except Exception:
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')
-        raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при создании аккаунта бота')
+        try:
+            shutil.rmtree(f'./units/{uid}')
+        finally:
+            raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при создании аккаунта бота')
 
     try:
         with open(f'./units/{uid}/proxies.txt', 'w') as f:
             proxies = await _get_proxies('.idle_proxies', config.PROXIES_PER_USER)
             f.write('\n'.join(proxies))
     except IndexError as e:
-        raise Exception(f'Не удалось создать юнит пользователя {uid}. Недостаточно свободных прокси\n{e}')
+        loguru.logger.error(f'SERVER:CREATE_UNIT: Error with PROXIES while creating unit for user {uid}')
+        raise e
 
 
 def get_free_port() -> int | None:
@@ -159,4 +167,13 @@ async def add_proxies(filepath: str, proxies: list[str]):
         return proxy.strip() + '\n'
 
     async with aiofiles.open(filepath, 'a') as f:
-        await f.writelines(list(map(process, proxies)))
+        await f.writelines(list(map(process, proxies)) + ['\n'])
+
+
+def delete_unit(uid: int | str, active_units: dict[str, Unit]):
+    if unit := active_units.get(uid):
+        unit.process.terminate()
+    try:
+        shutil.rmtree(f'./units/{uid}')
+    except FileNotFoundError:
+        raise Exception(f'Unit {uid} not found')

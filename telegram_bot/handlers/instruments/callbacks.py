@@ -113,15 +113,15 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    resp = await api.send_unit_command(uid, 'set_settings', settings)
-    match resp.status:
+    status, text = await api.send_unit_command(uid, 'set_settings', settings)
+    match status:
         case 200:
             await query.message.edit_text(f"{instrument.name}'s settings set successfully")
             await go_back(query, state, new_message=True, delete_old_message=False)
         case 400, 404:
             await query.message.answer('Произошла внутренняя ошибка. Пожалуйста обратитесь в поддержку')
         case 409:
-            await query.message.answer(await resp.text())
+            await query.message.answer(text)
 
     await query.answer()
 
@@ -131,12 +131,12 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    resp = await api.send_unit_command(uid, 'start')
-    match resp.status:
+    status, text = await api.send_unit_command(uid, 'start')
+    match status:
         case 200:
             await query.answer(f'{instrument.name} started')
         case 409:
-            await query.answer(await resp.text())
+            await query.answer(text)
         case 403:
             await query.answer(
                 'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"\n'
@@ -156,8 +156,8 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
 async def instruments_start_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
-    resp = await api.send_unit_command(uid, 'stop')
-    match resp.status:
+    status, text = await api.send_unit_command(uid, 'stop')
+    match status:
         case 200:
             await query.answer(f'{instrument.name} stopped')
         case 409:

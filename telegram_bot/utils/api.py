@@ -94,7 +94,7 @@ INSTRUMENTS = Instruments(
 )
 
 
-async def send_unit_command(uid: int | str, command: str, data=None) -> int | ClientResponse:
+async def send_unit_command(uid: int | str, command: str, data=None) -> dict | tuple[int, str]:
     if data is None:
         data = {}
     async with aiohttp.ClientSession() as session:
@@ -104,7 +104,7 @@ async def send_unit_command(uid: int | str, command: str, data=None) -> int | Cl
             if 'json' in resp.content_type:
                 return await resp.json()
             else:
-                return resp
+                return resp.status, await resp.text()
 
 
 async def increase_user_balance(uid, paid_amount, token):
