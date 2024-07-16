@@ -79,7 +79,8 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
     days_left = sub_info.get('days_left', 'No info')
     own_balance = sub_info.get('balance', 'No info')
     bot_wallet = sub_info.get('const_bot_wallet', 'No info')
-    bot_balance = sub_info.get('bot_balance', 'No info')
+    bot_balance_eth = sub_info.get('bot_balance_eth', 'No info')
+    bot_balance_weth = sub_info.get('bot_balance_weth', 'No info')
 
 
     text = f'''
@@ -91,7 +92,8 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
 Осталось дней до конца подписки: {days_left}
 Ваш баланс: {own_balance}
 
-Баланс бота: {bot_balance}
+Баланс бота (eth): {bot_balance_eth}
+Баланс бота (weth): {bot_balance_weth}
 Кошелек бота: {Code(bot_wallet).as_html()}
 '''
     with suppress(TelegramBadRequest):
