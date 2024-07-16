@@ -1,15 +1,14 @@
 import asyncio
 import loguru
 import os
-import sys
 from dataclasses import asdict
 
 from aiohttp import web
 import aiohttp
 from aiohttp.web_request import Request
 
-from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, get_wallet_balance, \
-    add_proxies
+import payments
+from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, add_proxies
 import config
 from server.user_info import UserInfo, UserStatus
 
@@ -164,7 +163,7 @@ async def increase_user_balance_handler(request: Request):
 async def give_days_handler(request: Request):
     uid = request.match_info.get('uid', None)
     amount = request.rel_url.query.get('amount', None)
-
+    # todo: add token validation
     if amount is None or not amount.isdigit():
         loguru.logger.warning(f'SERVER:GIVE_DAYS: bad request')
         return web.Response(status=400,
@@ -197,7 +196,9 @@ async def get_user_info_handler(request: Request):
     with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
-        dict_ui['bot_balance'] = await get_wallet_balance(ui.const_bot_wallet)
+        balance = await payments.fetch_bot_balance(ui.const_bot_wallet)
+        dict_ui['bot_balance_eth'] = balance['eth']
+        dict_ui['bot_balance_weth'] = balance['weth']
 
     return web.json_response(dict_ui)
 
@@ -215,7 +216,7 @@ async def add_idle_proxies_handler(request: Request):
         loguru.logger.warning(f'SERVER:ADD_IDLE_PROXIES: bad request')
         return web.Response(status=400, text='`proxies` must be a list of strings in json format')
 
-    await add_proxies('./idle_proxies', proxies)
+    await add_proxies('./.idle_proxies', proxies)
     loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies added')
     return web.Response()
 
@@ -226,7 +227,7 @@ async def get_user_ids_handler(request: Request):
 
     user_ids = []
     use_status = False
-    if status is not None and status.lower() != 'all':
+    if status is not None and status != '' and status.lower() != 'all':
         use_status = True
         status = status.capitalize()
 

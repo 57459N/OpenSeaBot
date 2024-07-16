@@ -137,7 +137,7 @@ async def daily_sub_balance_decrease(app: web.Application):
                                     await session.get(url=f"http://127.0.0.1:{app['active_units'][uid].port}/stop")
                         continue
 
-                    if ui.decrease_balance_or_deactivate(config.SUB_COST):
+                    if ui.decrease_balance_or_deactivate(config.SUB_COST_DAY):
                         loguru.logger.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is paid")
                     else:
                         loguru.logger.info(f"SERVER:DAILY_SUB_BALANCE_DECREASE: {uid} sub is not paid")
@@ -152,24 +152,6 @@ async def send_message_to_support(message: str):
     async with aiohttp.ClientSession() as session:
         resp = await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
                                   data={'chat_id': config.SUPPORT_UID, 'text': text})
-
-
-# from web3 import Web3, AsyncHTTPProvider
-# from web3.eth import AsyncEth
-
-async def get_wallet_balance(const_bot_wallet: str) -> float | str:
-    # w3 = Web3(
-    #         Web3.AsyncHTTPProvider(
-    #             "https://1rpc.io/eth",
-    #             request_kwargs={"ssl": False}
-    #         ),
-    #         modules={"eth": (AsyncEth,)},
-    #         middlewares=[]
-    #     )
-    # balance = await w3.eth.get_balance(const_bot_wallet)
-    # return w3.from_wei(balance, 'ether')
-
-    return "TEST BOT BALANCE. TODO: IMPLEMENT"
 
 
 async def add_proxies(filepath: str, proxies: list[str]):

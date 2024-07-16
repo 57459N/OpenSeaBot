@@ -7,16 +7,16 @@ import asyncio
 
 abi = [
     {
-        "inputs": [{"internalType":"address","name":"account","type":"address"}],
+        "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
         "name": "balanceOf",
-        "outputs": [{"internalType":"uint256","name":"","type":"uint256"}],
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function"
     },
     {
         "inputs": [],
         "name": "decimals",
-        "outputs": [{"internalType":"uint256","name":"","type":"uint256"}],
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function"
     }
@@ -30,6 +30,7 @@ async def generate_account() -> dict:
         "address": account.address,
         "secret": account.key.hex()
     }
+
 
 async def connect_to_all_rpcs(config: dict) -> dict:
     result = {}
@@ -48,6 +49,7 @@ async def connect_to_all_rpcs(config: dict) -> dict:
         )
     return result
 
+
 async def fetch_balance(w3: Web3, address: str, token_addresses: list) -> dict:
     results = []
 
@@ -58,7 +60,7 @@ async def fetch_balance(w3: Web3, address: str, token_addresses: list) -> dict:
 
             if balance > 0:
                 decimals = await contract.functions.decimals().call()
-                balance = round(balance / 10**decimals, 2)
+                balance = round(balance / 10 ** decimals, 2)
 
             results.append(
                 {
@@ -77,6 +79,7 @@ async def fetch_balance(w3: Web3, address: str, token_addresses: list) -> dict:
             )
 
     return results
+
 
 async def check_payment_handler(config: dict, _address: str, timeout: int = 60) -> dict:
     """
@@ -109,7 +112,8 @@ async def check_payment_handler(config: dict, _address: str, timeout: int = 60) 
             for batch_response in results:
                 for resp in batch_response:
                     if resp["balance"] > 0:
-                        logger.info(f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
+                        logger.info(
+                            f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
                         return resp
 
             logger.info(f'Nothin was found at address: {address}')
@@ -119,3 +123,26 @@ async def check_payment_handler(config: dict, _address: str, timeout: int = 60) 
             logger.exception(_err)
             await asyncio.sleep(10)
 
+
+async def fetch_bot_balance(_address: str) -> dict:
+    address = Web3.to_checksum_address(_address)
+
+    w3 = Web3(
+        Web3.AsyncHTTPProvider(
+            "https://1rpc.io/eth",
+            request_kwargs={"ssl": False}
+        ),
+        modules={"eth": (AsyncEth,)},
+        middlewares=[]
+    )
+
+    weth_balance = await fetch_balance(
+        w3, address, ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"]
+    )
+
+    eth_balance = float(Web3.from_wei(await w3.eth.get_balance(address), "ether"))
+
+    return {
+        "weth": weth_balance[0]["balance"],
+        "eth": eth_balance
+    }
