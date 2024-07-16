@@ -28,7 +28,9 @@ async def givedays__callback_handler(query: types.CallbackQuery, state: FSMConte
 @flags.backable()
 async def givedays_who_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await state.set_state(GiveDaysStates.amount)
-    await state.update_data(to_who=query.data.split('_')[1], prev_message=query.message)
+    to_who = query.data.split('_')[1]
+    username_to_id = {u.username: u.id for u in await api.get_users(query.bot, to_who)}
+    await state.update_data(to_who=to_who, prev_message=query.message, username_to_id=username_to_id)
     await query.message.edit_text(text='Введите или выберите количество дней, которое нужно выдать',
                                   reply_markup=kbs.get_givedays_amount_keyboard())
     await query.answer()
@@ -39,8 +41,11 @@ async def givedays_who_callback_handler(query: types.CallbackQuery, state: FSMCo
 async def givedays_usernames_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await state.update_data(to_who='usernames')
 
+    users = await api.get_users(query.bot)
+    username_to_id = {u.username: u.id for u in users if u.username}
+    await state.update_data(prev_message=query.message, username_to_id=username_to_id)
+
     await state.set_state(GiveDaysStates.usernames)
-    await state.update_data(prev_message=query.message)
     await query.message.edit_text(
         text='Выберите или введите каждое имя пользователя с новой строки после чего нажмите `Готово`',
         reply_markup=kbs.get_usernames_keyboard())
@@ -73,14 +78,13 @@ async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery,
 @flags.backable()
 async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    users = await api.get_users(query.bot, data['to_who'])
-    usernames = [u.username for u in users if u.username]
-    username_to_id = {u.username: u.id for u in users if u.username}
+    username_to_id = data['username_to_id']
 
+    options = list(username_to_id.keys())
     await state.set_state(GiveDaysStates.choosing_usernames)
-    await state.update_data(options=usernames, selected_options=set(), username_to_id=username_to_id)
+    await state.update_data(options=options, selected_options=set(), username_to_id=username_to_id)
     await query.message.edit_text(text='Выберите пользователей:',
-                                  reply_markup=kbs.get_choose_keyboard(options=usernames))
+                                  reply_markup=kbs.get_choose_keyboard(options=options))
     await query.answer()
 
 
@@ -89,6 +93,9 @@ async def givedays_usernames_choose_callback_handler(query: types.CallbackQuery,
 async def end_selection_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     selected_usernames = list(data.get("selected_options", set()))
+    if len(selected_usernames) == 0:
+        await query.answer('Выберите хотя бы одного пользователя', show_alert=True)
+        return
 
     await state.set_state(GiveDaysStates.amount)
     await state.update_data(usernames=selected_usernames, prev_message=query.message)
@@ -102,14 +109,17 @@ async def end_selection_callback_handler(query: types.CallbackQuery, state: FSMC
 async def givedays_amount_callback_handler(query: types.CallbackQuery, state: FSMContext):
     amount = query.data.split('_')[-1]
 
-    await state.update_data(amount=amount)
     data = await state.get_data()
+    username_to_id: dict = data['username_to_id']
+
     sep = '\n\t'
     text = f'''
 Вы уверены, что хотите выдать дни?
-Кому: {data['to_who'] if data['to_who'] != 'usernames' else sep + sep.join(data['usernames'])} 
-Сколько: {data['amount']}
+Кому: {sep + sep.join(username_to_id.keys())} 
+Сколько: {amount}
 '''
+
+    await state.update_data(amount=amount)
     await state.set_state(GiveDaysStates.confirm)
     await query.message.edit_text(text=text, reply_markup=kbs.get_confirm_keyboard())
     await query.answer()
@@ -119,16 +129,14 @@ async def givedays_amount_callback_handler(query: types.CallbackQuery, state: FS
 async def givedays_confirm_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     amount = data['amount']
-    to_who = data['to_who']
-    if to_who == 'usernames':
-        usernames = data.get("usernames")
-        username_to_id = data.get("username_to_id")
-        if username_to_id is None:
-            users = await api.get_users(query.bot)
-            username_to_id = {u.username: u.id for u in users if u.username}
-        uids = list(username_to_id[name] for name in usernames)
+    usernames = data.get('usernames')
+    username_to_id = data['username_to_id']
+
+    # if usernames was selected or entered, else all users filters on get_users stage
+    if usernames is not None:
+        uids = [username_to_id[uname] for uname in usernames]
     else:
-        uids = await api.get_user_ids(to_who)
+        uids = list(username_to_id.values())
 
     errors = await api.give_days(uids, amount=amount)
 

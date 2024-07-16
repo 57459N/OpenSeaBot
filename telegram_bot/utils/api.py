@@ -70,6 +70,8 @@ async def get_users(bot: Bot, status: str = None) -> tuple[types.ChatFullInfo] |
 
 
 async def get_user_ids(status: str = None) -> list[int] | None:
+    if status is None:
+        status = ''
     loguru.logger.info('USER_IDS: requesting user_ids from server')
     async with aiohttp.ClientSession() as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids?status={status}'

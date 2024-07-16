@@ -12,6 +12,7 @@ async def main():
         asyncio.create_task(collections_update_handler()),
         asyncio.create_task(collections_prices_handler()),
         # asyncio.create_task(work_client())
+        #
     ]
 
     await asyncio.gather(*tasks)

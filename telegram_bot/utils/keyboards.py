@@ -8,7 +8,7 @@ from telegram_bot.handlers.callbacks_data import SelectCallback, PaginationCallb
 from telegram_bot.utils.api import INSTRUMENTS
 
 
-def get_choose_keyboard(options: [str], selected: [str] = None, page: int = 0) -> InlineKeyboardMarkup:
+def get_choose_keyboard(options: list[str], selected: list[str] = None, page: int = 0) -> InlineKeyboardMarkup:
     if selected is None:
         selected = []
 

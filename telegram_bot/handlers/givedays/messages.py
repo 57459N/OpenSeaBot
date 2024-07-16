@@ -44,11 +44,22 @@ async def amount_message_handler(message: types.Message, state: FSMContext):
     users = set(map(lambda x: x.strip('@, '), message.text.split('\n')))
 
     data = await state.get_data()
+    username_to_id = data['username_to_id']
 
-    new_users = users.union(data.get('usernames', set()))
+    found, not_found = set(), set()
+
+    for u in users:
+        (not_found, found)[u in username_to_id].add(u)
+
     messages_to_delete = data.get('messages_to_delete')
     if messages_to_delete is None: messages_to_delete = []
+
+    if len(not_found):
+        user_list = '\n\t'.join(not_found)
+        m = await message.answer(f'Следующие пользователи не были добавлены, так как не найдены:\n\t{user_list}')
+        messages_to_delete.append(m)
     messages_to_delete.append(message)
 
+    new_users = found.union(data.get('usernames', set()))
+
     await state.update_data(usernames=new_users, messages_to_delete=messages_to_delete)
-    pass
