@@ -26,7 +26,6 @@ async def daily_ctx(app: web.Application):
 @web.middleware
 async def auth_middleware(request: Request, handler):
     token = request.rel_url.query.get('token')
-    loguru.logger.error(f'SERVER:AUTH: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`')
     if token is None or not validate_token(token):
         return web.Response(status=401)
     else:
