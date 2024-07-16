@@ -1,10 +1,8 @@
+import os
 import subprocess
 import sys
 
-
-# TODO: HANDLE UNCLOSED SESSION, PROBABLY WITH LONG SLEEP, MAKE CLOSE SESSION ON __DEL__ IN REQUEST CLASS
-# TODO: FIGURE OUT STATES AND WORKFLOW IN UNIT
-# TODO: MAKE SETTINGS FROM BOT PASS
+sys.path.append(os.getcwd())
 
 
 def main():

@@ -1,6 +1,8 @@
 import asyncio
-import loguru
+import os
 import sys
+
+sys.path.append(os.getcwd())
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -15,6 +17,7 @@ from handlers.instruments import router as instruments_router
 from handlers.sub_extend import router as sub_extend_router
 from handlers.add_proxies import router as add_proxies_router
 from handlers.create_unit import router as create_unit_router
+
 
 import config
 
