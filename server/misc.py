@@ -17,7 +17,7 @@ from cryptography.fernet import Fernet
 
 import config
 import payments
-from server.user_info import UserInfo, UserStatus
+from user_info import UserInfo, UserStatus
 
 
 async def _get_proxies(filepath: str, amount: int) -> list[str]:

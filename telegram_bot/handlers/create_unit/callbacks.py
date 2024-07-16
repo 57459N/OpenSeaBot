@@ -7,9 +7,9 @@ from aiogram import Router, flags, types, Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.context import FSMContext
 
-import telegram_bot.utils.keyboards as kbs
-from telegram_bot.handlers.create_unit.states import CreateUnitStates
-from telegram_bot.utils import api
+import utils.keyboards as kbs
+from handlers.create_unit.states import CreateUnitStates
+from utils import api
 
 router = Router()
 

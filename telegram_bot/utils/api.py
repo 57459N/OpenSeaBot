@@ -9,7 +9,7 @@ from aiohttp import ClientResponse
 from aiohttp.web_response import Response
 
 import config
-from telegram_bot.utils.instrument import Instrument, Instruments
+from utils.instrument import Instrument, Instruments
 from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 

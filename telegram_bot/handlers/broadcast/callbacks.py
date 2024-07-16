@@ -7,10 +7,10 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InputFile, PhotoSize
 
-from telegram_bot.handlers.broadcast.states import BroadcastStates
-from telegram_bot.utils import api
+from handlers.broadcast.states import BroadcastStates
+from utils import api
 
-import telegram_bot.utils.keyboards as kbs
+import utils.keyboards as kbs
 
 router = Router()
 

@@ -3,10 +3,10 @@ import asyncio
 from aiogram import Router, types, flags
 from aiogram.fsm.context import FSMContext
 
-from telegram_bot.handlers.add_proxies.states import AddIdleProxiesStates
-from telegram_bot.utils import api
+from handlers.add_proxies.states import AddIdleProxiesStates
+from utils import api
 
-import telegram_bot.utils.keyboards as kbs
+import utils.keyboards as kbs
 
 router = Router()
 

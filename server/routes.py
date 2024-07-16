@@ -13,7 +13,7 @@ from aiohttp.web_request import Request
 import payments
 from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, add_proxies, delete_unit
 import config
-from server.user_info import UserInfo, UserStatus
+from user_info import UserInfo, UserStatus
 
 routes = web.RouteTableDef()
 

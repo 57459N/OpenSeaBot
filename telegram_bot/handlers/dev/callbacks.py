@@ -8,8 +8,8 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InputFile, PhotoSize
 
-import telegram_bot.utils.keyboards as kbs
-from telegram_bot.utils import api
+import utils.keyboards as kbs
+from utils import api
 
 router = Router()
 

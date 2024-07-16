@@ -5,14 +5,14 @@ from aiogram import Router, F, types, flags
 from aiogram.fsm.context import FSMContext
 
 import config
-from telegram_bot.handlers.callbacks_data import InstrumentCallback
-from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
+from handlers.callbacks_data import InstrumentCallback
+from middlwares.backable_query_middleware import BackableMiddleware
 
 from .states import InstrumentStates
-from telegram_bot.utils import api
-from telegram_bot.utils.misc import get_settings_beautiful_list, go_back
+from utils import api
+from utils.misc import get_settings_beautiful_list, go_back
 
-import telegram_bot.utils.keyboards as kbs
+import utils.keyboards as kbs
 
 router = Router()
 router.callback_query.middleware(BackableMiddleware())
