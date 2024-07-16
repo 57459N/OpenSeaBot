@@ -123,3 +123,13 @@ async def add_proxies(proxies: list[str]) -> bool:
         loguru.logger.info(f'ADD_PROXIES: adding {len(proxies)} proxies')
         async with session.post(url, json=proxies) as resp:
             return 200 <= resp.status < 300
+
+
+async def get_units_status() -> dict | tuple[int, str]:
+    async with aiohttp.ClientSession() as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_units_status?token={config.BOT_API_TOKEN}'
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            else:
+                return resp.status, await resp.text()

@@ -5,13 +5,13 @@ from aiogram import Router, types, flags
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
-from handlers.create_unit.states import CreateUnitStates
+from handlers.create_unit.states import InitUnitStates
 from utils import api
 
 router = Router()
 
 
-@router.message(CreateUnitStates.uid)
+@router.message(InitUnitStates.uid)
 async def create_unit_message_handler(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
         m = await message.answer(text='UID должен быть целым числом')

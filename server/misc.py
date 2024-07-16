@@ -59,10 +59,7 @@ async def create_unit(uid: int):
             pk_o.write(encrypted)
     except Exception:
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')
-        try:
-            shutil.rmtree(f'./units/{uid}')
-        finally:
-            raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при создании аккаунта бота')
+        raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при создании аккаунта бота')
 
     try:
         with open(f'./units/{uid}/proxies.txt', 'w') as f:
@@ -104,6 +101,11 @@ def init_unit(uid: str) -> Unit:
     if not os.path.exists(f'./units/{uid}/unit.py'):
         loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
         return None
+
+    with open(f'./units/{uid}/proxies.txt', 'r') as f:
+        if len(set(filter(lambda x: x.strip(), f.readlines()))) == 0:
+            loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} has no proxies')
+            return None
 
     process = Popen([sys.executable, f'unit.py', f'{port}'], cwd=f'./units/{uid}')
     unit = Unit(port=port, process=process)

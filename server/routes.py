@@ -18,6 +18,41 @@ from user_info import UserInfo, UserStatus
 routes = web.RouteTableDef()
 
 
+@routes.get('/server/get_units_status')
+async def get_units_status_handler(request: Request):
+    data = {}
+    for d in os.listdir('./units'):
+        if not unit_exists(d) or not d.isdigit():
+            continue
+        data[d] = False
+
+    data.update({k: v is not None for k, v in request.app['active_units'].items()})
+
+    loguru.logger.info(f'SERVER:GET_UNITS_STATUS: sending units statuses')
+    return web.json_response(data)
+
+
+
+@routes.get('/unit/{uid}/init')
+async def unit_init_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    if request.app['active_units'].get(uid):
+        loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is already initialized')
+        return web.Response(status=409, text=f'Unit {uid} is already initialized')
+
+    try:
+        request.app['active_units'][uid] = init_unit(uid)
+        loguru.logger.info(f'SERVER:INIT_UNIT: unit {uid} initialized')
+        return web.Response(text='OK', status=200)
+    except Exception as e:
+        loguru.logger.error(f'SERVER:INIT_UNIT: {e}')
+        return web.Response(status=500, text=str(e))
+
+
 @routes.get('/unit/{uid}/delete')
 async def unit_delete_handler(request: Request):
     uid = request.match_info['uid']
@@ -42,8 +77,7 @@ async def unit_create_handler(request: Request):
         request.app['active_units'][uid] = init_unit(uid)
         await asyncio.sleep(1)
     except Exception as e:
-        with suppress(Exception):
-            delete_unit(uid, request.app['active_units'])
+
         return web.Response(status=500, text=str(e))
     loguru.logger.info(f'SERVER:CREATE_UNIT: unit {uid} created')
 

@@ -1,4 +1,4 @@
 from aiogram.fsm.state import StatesGroup, State
 
-class InitUnitStates(StatesGroup):
+class CreateUnitStates(StatesGroup):
     uid = State()

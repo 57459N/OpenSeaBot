@@ -112,8 +112,9 @@ def get_admin_menu_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Выдача дней", callback_data='givedays'))
             .add(InlineKeyboardButton(text="Рассылка", callback_data='broadcast'))
-            .add(InlineKeyboardButton(text="Добавление прокси", callback_data='add_proxies'))
             .add(InlineKeyboardButton(text="Создание юнита", callback_data='create_unit'))
+            .add(InlineKeyboardButton(text="Добавление прокси", callback_data='add_proxies'))
+            .add(InlineKeyboardButton(text="Инициализация юнита", callback_data='init_unit'))
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .adjust(2, 2, 1)
             .as_markup())
@@ -264,3 +265,11 @@ def get_instrument_settings_keyboard(instrument_name: str, fields: list[str]):
     b.add(InlineKeyboardButton(text="Назад", callback_data='back'))
     b.adjust(2)
     return b.as_markup()
+
+
+def get_init_unit_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Готово", callback_data='init_unit_finish'))
+            .add(InlineKeyboardButton(text="Назад", callback_data='back'))
+            .adjust(1, 1)
+            .as_markup())
