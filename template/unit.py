@@ -82,7 +82,9 @@ def validate_settings(data: dict[str, Any]) -> str | None:
     '''
     # all values are numeric
     for k, v in data.items():
-        if not isinstance(v, float) or not isinstance(v, int):
+        try:
+            a = float(v)
+        except ValueError:
             return k
 
     # all needed fields are presented
