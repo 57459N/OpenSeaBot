@@ -59,7 +59,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
     uid = query.from_user.id
     instrument = api.INSTRUMENTS[callback_data.inst]
     settings = await api.send_unit_command(uid, 'get_settings')
-    if settings is False:
+    if isinstance(settings, tuple):
         await query.answer('Error while getting settings')
         return
 
