@@ -8,8 +8,11 @@ import aiohttp
 from aiohttp import web
 import sys
 import os
+
+from aiohttp.web_request import Request
+
 from routes import routes
-from misc import init_unit, Unit, daily_sub_balance_decrease
+from misc import init_unit, Unit, daily_sub_balance_decrease, validate_token
 
 
 async def daily_ctx(app: web.Application):
@@ -18,6 +21,16 @@ async def daily_ctx(app: web.Application):
     task.cancel()
     with suppress(asyncio.CancelledError):
         await task
+
+
+@web.middleware
+async def auth_middleware(request: Request, handler):
+    token = request.rel_url.query.get('token')
+    loguru.logger.error(f'SERVER:AUTH: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`')
+    if token is None or not validate_token(token):
+        return web.Response(status=401)
+    else:
+        return await handler(request)
 
 
 def main():
@@ -36,7 +49,7 @@ def main():
         print(f'To specify another port use `{sys.argv[0]} <port>`')
 
     # start server
-    app = web.Application()
+    app = web.Application(middlewares=[auth_middleware])
     # to allow routes to use active units dict
     app['active_units'] = active_units
     app['port'] = port

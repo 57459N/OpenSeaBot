@@ -134,22 +134,22 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     status, text = await api.send_unit_command(uid, 'start')
     match status:
         case 200:
-            await query.answer(f'{instrument.name} started')
+            await query.answer(f'{instrument.name} запущен')
+            return
         case 409:
-            await query.answer(text)
+            text = 'Ваш юнит не проинициализирован. Пожалуйста обратитесь в поддержку'
         case 403:
-            await query.answer(
-                'Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"\n'
-                'Если вы уже оплачивали подписку, обратитесь в поддержку',
-                show_alert=True)
+            text = ('Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"\n'
+                    'Если вы уже оплачивали подписку, обратитесь в поддержку')
         case 503:
-            await query.message.answer(
-                'К сожалению вам не предоставили прокси. Обратитесь в поддержку для решения данной проблемы',
-                reply_markup=kbs.get_support_keyboard())
+            text = 'К сожалению вам не предоставили прокси. Обратитесь в поддержку для решения данной проблемы'
         case _:
-            await query.message.answer(
-                'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
-            await query.answer(f'{instrument.name} not started')
+            text = 'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.'
+
+    await query.message.answer(
+        text=text,
+        reply_markup=kbs.get_support_keyboard())
+    await query.answer()
 
 
 @router.callback_query(InstrumentCallback.filter(F.act == 'stop'))
@@ -159,10 +159,10 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     status, text = await api.send_unit_command(uid, 'stop')
     match status:
         case 200:
-            await query.answer(f'{instrument.name} stopped')
+            await query.answer(f'{instrument.name} остановлен')
         case 409:
-            await query.answer(f'{instrument.name} is not running', show_alert=True)
+            await query.answer(f'{instrument.name} не запущен', show_alert=True)
         case _:
             await query.message.answer(
                 'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
-            await query.answer(f'{instrument.name} not stopped')
+            await query.answer(f'{instrument.name} не остановлен')

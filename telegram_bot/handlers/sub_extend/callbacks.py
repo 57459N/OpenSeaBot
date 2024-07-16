@@ -79,7 +79,7 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
 
         if paid_amount != 0:
             wallet.paid = True
-            if await api.increase_user_balance(uid, paid_amount, query.bot.token):
+            if await api.increase_user_balance(uid, paid_amount):
                 text = f'На баланс зачислено {paid_amount}. Благодарим за оплату'
                 kb = kbs.get_delete_keyboard()
                 loguru.logger.info(f'SUB_EXTEND: payment got {paid_amount} from user {uid}')

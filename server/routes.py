@@ -5,6 +5,7 @@ import loguru
 import os
 from dataclasses import asdict
 
+from aiogram.utils.formatting import Code
 from aiohttp import web
 import aiohttp
 from aiohttp.web_request import Request
@@ -135,12 +136,11 @@ async def set_settings_handler(request: Request):
 async def increase_user_balance_handler(request: Request):
     uid = request.match_info.get('uid', None)
     amount = request.rel_url.query.get('amount', None)
-    token = request.rel_url.query.get('token', None)
-    if uid is None or amount is None or token is None:
+    if uid is None or amount is None:
         loguru.logger.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
         return web.Response(status=400,
-                            text='Provide `uid`, `amount` and `token` parameters into URL.'
-                                 ' For example: /user/1/increase_balance?amount=10&token=123')
+                            text='Provide `uid`, `amount` parameters into URL.'
+                                 ' For example: /user/1/increase_balance?amount=10')
     try:
         amount = float(amount)
         a = int(uid)
@@ -148,23 +148,17 @@ async def increase_user_balance_handler(request: Request):
         loguru.logger.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
         return web.Response(status=400,
                             text='`uid` must be an integer\n`amount` must be a number. 777 or 3.14'
-                                 ' For example: /user/1/increase_balance?amount=10&token=123')
-
-    if validate_token(token) is False:
-        loguru.logger.error(f'SERVER:INCREASE_USER_BALANCE: bad token trying to increase balance for {uid}')
-        return web.Response(status=401, text='Bad token')
+                                 ' For example: /user/1/increase_balance?amount=10')
 
     info_path = f'./units/{uid}/.userinfo'
     # User's unit is not created yet
     if not unit_exists(uid):
-        dirs = info_path[:info_path.rfind('/')]
-        os.makedirs(dirs, exist_ok=True)
         try:
             await create_unit(uid)
             request.app['active_units'][uid] = init_unit(uid)
         except Exception as e:
             loguru.logger.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not created\n{e}')
-            await send_message_to_support(e)
+            await send_message_to_support(f'User {Code(uid).as_html()}: {e}')
 
     with UserInfo(info_path) as ui:
         ui.increase_balance_and_activate(amount)

@@ -8,6 +8,7 @@ from aiogram import Bot, types
 from aiohttp import ClientResponse
 from aiohttp.web_response import Response
 
+import config
 from telegram_bot.utils.instrument import Instrument, Instruments
 from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
@@ -15,7 +16,8 @@ from config import SERVER_HOST_IP, SERVER_HOST_PORT
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
     loguru.logger.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
     async with aiohttp.ClientSession() as session:
-        async with session.get(f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info') as resp:
+        async with session.get(
+                f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info?token={config.BOT_API_TOKEN}') as resp:
             if resp.status == 200 and 'json' in resp.content_type:
                 return await resp.json()
             elif resp.status == 404:
@@ -48,7 +50,7 @@ async def give_days(uids: list[str], amount: int) -> dict[str, str]:
     async with aiohttp.ClientSession() as session:
         for uid in uids:
             async with session.get(
-                    f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/give_days?amount={amount}') as resp:
+                    f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/give_days?amount={amount}&token={config.BOT_API_TOKEN}') as resp:
                 if resp.status == 404 or resp.status == 409:
                     text = await resp.text()
                     loguru.logger.warning(f'SUBS: can not give days to {uid}\n{text}')
@@ -74,7 +76,7 @@ async def get_user_ids(status: str = None) -> list[int] | None:
         status = ''
     loguru.logger.info('USER_IDS: requesting user_ids from server')
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids?status={status}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids?status={status}&token={config.BOT_API_TOKEN}'
         async with session.get(url) as resp:
             try:
                 if 'json' in resp.content_type:
@@ -98,7 +100,7 @@ async def send_unit_command(uid: int | str, command: str, data=None) -> dict | t
     if data is None:
         data = {}
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}&token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'SEND_UNIT_COMMAND: send {command} to unit {uid}')
         async with session.get(url) as resp:
             if 'json' in resp.content_type:
@@ -107,9 +109,9 @@ async def send_unit_command(uid: int | str, command: str, data=None) -> dict | t
                 return resp.status, await resp.text()
 
 
-async def increase_user_balance(uid, paid_amount, token):
+async def increase_user_balance(uid, paid_amount):
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/increase_balance?amount={paid_amount}&token={token}'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/increase_balance?amount={paid_amount}&token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'INCREASE_USER_BALANCE: requesting increase balance for user {uid}')
         async with session.get(url) as resp:
             return 200 <= resp.status < 300
@@ -117,7 +119,7 @@ async def increase_user_balance(uid, paid_amount, token):
 
 async def add_proxies(proxies: list[str]) -> bool:
     async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies?token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'ADD_PROXIES: adding {len(proxies)} proxies')
         async with session.post(url, json=proxies) as resp:
             return 200 <= resp.status < 300
