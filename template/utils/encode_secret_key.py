@@ -7,7 +7,7 @@ import json
 import cryptography
 
 
-# todo: make sure in server.misc `_encrypt_private_key` the function is the same
+# todo: make sure in server.misc `encrypt_private_key` the function is the same
 def encode_wallets(password: str, file_data: str) -> bool:
     key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
     f = Fernet(key)

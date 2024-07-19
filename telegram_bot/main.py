@@ -18,6 +18,7 @@ from handlers.sub_extend import router as sub_extend_router
 from handlers.add_proxies import router as add_proxies_router
 from handlers.create_unit import router as create_unit_router
 from handlers.init_unit import router as init_unit_router
+from handlers.wallet_data import router as wallet_data_router
 
 
 import config
@@ -42,6 +43,7 @@ async def main() -> None:
         add_proxies_router,
         create_unit_router,
         init_unit_router,
+        wallet_data_router,
     )
 
     # Start polling

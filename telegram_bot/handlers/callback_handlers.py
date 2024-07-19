@@ -12,7 +12,7 @@ from handlers.callbacks_data import PaginationCallback, SelectCallback
 from middlwares.backable_query_middleware import BackableMiddleware
 from middlwares.sub_active_middleware import SubActiveMiddleware
 from utils import api
-from utils.misc import go_back, is_user_admin, decrypt_secret_key
+from utils.misc import go_back
 
 import utils.keyboards as kbs
 
@@ -75,13 +75,20 @@ async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
 @flags.backable()
 @router.callback_query(lambda query: query.data == 'sub_info_reload')
 async def sub_info_callback_handler(query: types.CallbackQuery):
-    sub_info = await api.get_user_subscription_info_by_id(query.from_user.id)
-    status = 'Активна' if sub_info.get('status', 'No info').lower() == 'active' else 'Не активна'
-    days_left = sub_info.get('days_left', 'No info')
-    own_balance = sub_info.get('balance', 'No info')
-    bot_wallet = sub_info.get('const_bot_wallet', 'No info')
-    bot_balance_eth = sub_info.get('bot_balance_eth', 'No info')
-    bot_balance_weth = sub_info.get('bot_balance_weth', 'No info')
+    if sub_info := await api.get_user_subscription_info_by_id(query.from_user.id):
+        status = 'Активна' if sub_info.get('status', 'No info').lower() == 'active' else 'Не активна'
+        days_left = sub_info.get('days_left', 'No info')
+        own_balance = sub_info.get('balance', 'No info')
+        bot_wallet = sub_info.get('bot_wallet', 'No info')
+        bot_balance_eth = sub_info.get('bot_balance_eth', 'No info')
+        bot_balance_weth = sub_info.get('bot_balance_weth', 'No info')
+    else:
+        status = 'Not loaded'
+        days_left = 'Not loaded'
+        own_balance = 'Not loaded'
+        bot_wallet = 'Not loaded'
+        bot_balance_eth = 'Not loaded'
+        bot_balance_weth = 'Not loaded'
 
     text = f'''
 Привет, @{query.from_user.username}!
@@ -130,15 +137,4 @@ async def admin_menu_callback_handler(query: types.CallbackQuery):
 @router.callback_query(lambda query: query.data == 'dev')
 async def dev_menu_callback_handler(query: types.CallbackQuery):
     await query.message.answer(text='Dev', reply_markup=kbs.get_dev_keyboard())
-    await query.answer()
-
-
-@router.callback_query(lambda query: query.data == 'get_private')
-async def gett_private_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    key = await api.send_unit_command(query.from_user.id, 'get_private_key')
-    decrypted = await decrypt_secret_key(key, config.BOT_API_TOKEN)
-    await query.message.answer(
-        f'В целях {Bold("безопасности").as_html()} рекомендуется {Bold("удалить данное сообщение").as_html()}'
-        f' после копирования ключа.'
-        f'\nПриватный ключ кошелька:\n{Code(decrypted).as_html()}', parse_mode='HTML')
     await query.answer()

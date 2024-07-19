@@ -81,7 +81,7 @@ def get_sub_info_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Продлить подписку", callback_data='sub_extend'))
             .add(InlineKeyboardButton(text="Обновить информацию", callback_data='sub_info_reload'))
-            .add(InlineKeyboardButton(text="Приватный ключ", callback_data='get_private'))
+            .add(InlineKeyboardButton(text="Кошелек", callback_data='wallet_data_menu'))
             .add(InlineKeyboardButton(text="Назад", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
@@ -170,7 +170,7 @@ def get_confirm_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Да", callback_data='confirm_yes'))
             .add(InlineKeyboardButton(text="Нет", callback_data='confirm_no'))
-            .add(InlineKeyboardButton(text="Назад", callback_data='back'))
+            .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
             .adjust(2, 1)
             .as_markup())
 
@@ -213,7 +213,7 @@ def get_dev_keyboard():
                                                                                          param='None').pack()))
 
             .add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
-            .adjust(2,2,1)
+            .adjust(2, 2, 1)
             .as_markup())
 
 
@@ -274,4 +274,20 @@ def get_init_unit_keyboard():
             .add(InlineKeyboardButton(text="Готово", callback_data='init_unit_finish'))
             .add(InlineKeyboardButton(text="Назад", callback_data='back'))
             .adjust(1, 1)
+            .as_markup())
+
+
+def get_wallet_data_menu_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Приватный ключ", callback_data='wallet_data_get_private'))
+            .add(InlineKeyboardButton(text="Поменять данные", callback_data='wallet_data_set'))
+            .add(InlineKeyboardButton(text="Назад", callback_data='back'))
+            .adjust(1)
+            .as_markup())
+
+
+def get_skip_keyboard(callback_data: str):
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="Пропустить", callback_data=callback_data))
+            .adjust(1)
             .as_markup())

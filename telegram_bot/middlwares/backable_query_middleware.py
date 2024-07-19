@@ -15,7 +15,7 @@ class BackableMiddleware(BaseMiddleware):
     ) -> Any:
 
         if isinstance(event, Message):
-            message = event
+            message = data.get['prev_message']
         else:
             message = event.message
 

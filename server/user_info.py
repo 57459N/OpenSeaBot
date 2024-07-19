@@ -18,7 +18,7 @@ class UserInfo:
 
     status: str = UserStatus.inactive.value
     balance: float = 0.0
-    const_bot_wallet: str = ""
+    bot_wallet: str = ""
 
     def __post_init__(self, path: str):
         if not os.path.exists(path):

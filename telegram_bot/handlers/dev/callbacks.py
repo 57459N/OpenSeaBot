@@ -12,7 +12,7 @@ from aiogram.utils.formatting import Code, Bold
 import config
 import utils.keyboards as kbs
 from utils import api
-from utils.misc import decrypt_secret_key
+from utils.misc import decrypt_private_key
 
 router = Router()
 
@@ -26,7 +26,7 @@ async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda query: query.data == 'dev_get_private')
 async def dev_callback_handler(query: types.CallbackQuery, state: FSMContext):
     key = await api.send_unit_command(query.from_user.id, 'get_private_key')
-    decrypted = await decrypt_secret_key(key, config.BOT_API_TOKEN)
+    decrypted = await decrypt_private_key(key, config.BOT_API_TOKEN)
     await query.message.answer(
         f'В целях {Bold("безопасности").as_html()} рекомендуется {Bold("удалить данное сообщение").as_html()}'
         f' после копирования ключа.'

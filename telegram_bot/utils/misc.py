@@ -54,7 +54,11 @@ async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=Fal
         await query.answer()
 
 
-async def decrypt_secret_key(secret: str, password: str) -> str:
+async def decrypt_private_key(private_key: str, password: str) -> str:
     key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
-    return Fernet(key).decrypt(secret).decode()
+    return Fernet(key).decrypt(private_key).decode()
 
+
+async def encrypt_private_key(private_key: str, password: str) -> bytes:
+    key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
+    return Fernet(key).encrypt(private_key.encode())

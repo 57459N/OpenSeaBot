@@ -6,7 +6,7 @@ import os
 from dataclasses import asdict
 
 from aiogram.utils.formatting import Code
-from aiohttp import web
+from aiohttp import web, ClientResponseError
 import aiohttp
 from aiohttp.web_request import Request
 
@@ -179,7 +179,6 @@ async def get_private_key_handler(request: Request):
 
     private_key = await decrypt_secret_key(f'./units/{uid}/data/private_key.txt',
                                            '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
-    print(private_key)
     encrypted_to_send = await misc.encrypt_private_key(private_key, config.BOT_API_TOKEN)
     return web.json_response(encrypted_to_send.decode('utf-8'))
 
@@ -257,9 +256,13 @@ async def get_user_info_handler(request: Request):
     with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
-        balance = await payments.fetch_bot_balance(ui.const_bot_wallet)
-        dict_ui['bot_balance_eth'] = balance['eth']
-        dict_ui['bot_balance_weth'] = balance['weth']
+        try:
+            balance = await payments.fetch_bot_balance(ui.bot_wallet)
+            dict_ui['bot_balance_eth'] = balance['eth']
+            dict_ui['bot_balance_weth'] = balance['weth']
+        except ClientResponseError:
+            dict_ui['bot_balance_eth'] = 'Not loaded'
+            dict_ui['bot_balance_weth'] = 'Not loaded'
 
     return web.json_response(dict_ui)
 

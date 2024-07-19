@@ -14,7 +14,8 @@ async def command_start_handler(message: types.Message):
     is_admin = await is_user_admin(user_id)
     is_sub = await is_user_subscribed(user_id)
     if (is_sub or is_admin) and True:
-        text = 'Hello with sub'
+        text = ('Привет, добро пожаловать в наш проект 0х1530. '
+                'Это простой бот, позволяющий вам брать NFT через биды и всегда быть быстрее других.')
         kb = get_welcome_keyboard(is_admin, user_id)
     else:
         text = 'Hello, you must sub before use this bot'

@@ -52,7 +52,7 @@ async def create_unit(uid: int):
         with open(f'./units/{uid}/data/private_key.txt', 'wb') as pk_o, UserInfo(f'./units/{uid}/.userinfo') as ui:
             account = await payments.generate_account()
 
-            ui.const_bot_wallet = account['address']
+            ui.bot_wallet = account['address']
 
             private_key = account['secret']
             # make sure password here match with password in template
