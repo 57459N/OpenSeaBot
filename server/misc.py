@@ -32,7 +32,7 @@ async def _get_proxies(filepath: str, amount: int) -> list[str]:
     return list(map(lambda x: x.strip(), lines[:amount]))
 
 
-async def _encrypt_private_key(private_key: str, password: str) -> bytes:
+async def encrypt_private_key(private_key: str, password: str) -> bytes:
     key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
     return Fernet(key).encrypt(private_key.encode())
 
@@ -55,7 +55,8 @@ async def create_unit(uid: int):
             ui.const_bot_wallet = account['address']
 
             private_key = account['secret']
-            encrypted = await _encrypt_private_key(private_key, '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
+            # make sure password here match with password in template
+            encrypted = await encrypt_private_key(private_key, '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
             pk_o.write(encrypted)
     except Exception:
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')

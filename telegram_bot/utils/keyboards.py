@@ -81,6 +81,7 @@ def get_sub_info_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Продлить подписку", callback_data='sub_extend'))
             .add(InlineKeyboardButton(text="Обновить информацию", callback_data='sub_info_reload'))
+            .add(InlineKeyboardButton(text="Приватный ключ", callback_data='get_private'))
             .add(InlineKeyboardButton(text="Назад", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
@@ -206,6 +207,7 @@ def get_dev_keyboard():
             .add(InlineKeyboardButton(text="Create", callback_data='dev_create'))
             .add(InlineKeyboardButton(text="Start", callback_data='dev_start'))
             .add(InlineKeyboardButton(text="Stop", callback_data='dev_stop'))
+            .add(InlineKeyboardButton(text="Get_private", callback_data='dev_get_private'))
             .add(InlineKeyboardButton(text="Настройки", callback_data=InstrumentCallback(act='settings',
                                                                                          inst="BaseInstrument",
                                                                                          param='None').pack()))

@@ -10,10 +10,12 @@ from aiohttp import web
 import aiohttp
 from aiohttp.web_request import Request
 
+import misc
 import payments
 from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, add_proxies, delete_unit
 import config
 from user_info import UserInfo, UserStatus
+from utils.utils import decrypt_secret_key
 
 routes = web.RouteTableDef()
 
@@ -30,7 +32,6 @@ async def get_units_status_handler(request: Request):
 
     loguru.logger.info(f'SERVER:GET_UNITS_STATUS: sending units statuses')
     return web.json_response(data)
-
 
 
 @routes.get('/unit/{uid}/init')
@@ -140,6 +141,8 @@ async def get_settings_handler(request: Request):
         loguru.logger.warning(f'SERVER:GET_SETTINGS: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
+    # todo: check if unit is initialized
+
     active_units = request.app['active_units']
     async with aiohttp.ClientSession() as session:
         url = f'http://localhost:{active_units[uid].port}/get_settings'
@@ -164,6 +167,21 @@ async def set_settings_handler(request: Request):
         url = f'http://localhost:{active_units[uid].port}/set_settings'
         async with session.post(url, data=settings) as resp:
             return web.Response(status=resp.status, text=await resp.text())
+
+
+@routes.get('/unit/{uid}/get_private_key')
+async def get_private_key_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:IS_RUNNING: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    private_key = await decrypt_secret_key(f'./units/{uid}/data/private_key.txt',
+                                           '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
+    print(private_key)
+    encrypted_to_send = await misc.encrypt_private_key(private_key, config.BOT_API_TOKEN)
+    return web.json_response(encrypted_to_send.decode('utf-8'))
 
 
 @routes.get('/user/{uid}/increase_balance')
