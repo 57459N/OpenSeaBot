@@ -1,9 +1,9 @@
 from aiogram import Router, types
 from aiogram.filters import CommandStart
 
-from utils.keyboards import get_no_sub_keyboard, get_welcome_keyboard
-from utils.api import is_user_subscribed
-from utils.misc import is_user_admin
+from telegram_bot.utils.keyboards import get_no_sub_keyboard, get_welcome_keyboard
+from telegram_bot.utils.api import is_user_subscribed
+from telegram_bot.utils.misc import is_user_admin
 
 router = Router()
 

@@ -3,9 +3,9 @@ import config
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from handlers.callbacks_data import SelectCallback, PaginationCallback, InstrumentCallback
+from telegram_bot.handlers.callbacks_data import SelectCallback, PaginationCallback, InstrumentCallback
 
-from utils.api import INSTRUMENTS
+from telegram_bot.utils.api import INSTRUMENTS
 
 
 def get_choose_keyboard(options: list[str], selected: list[str] = None, page: int = 0) -> InlineKeyboardMarkup:

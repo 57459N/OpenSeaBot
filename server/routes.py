@@ -1,5 +1,4 @@
 import asyncio
-from contextlib import suppress
 
 import loguru
 import os
@@ -10,12 +9,12 @@ from aiohttp import web, ClientResponseError
 import aiohttp
 from aiohttp.web_request import Request
 
-import misc
-import payments
-from misc import create_unit, init_unit, validate_token, unit_exists, send_message_to_support, add_proxies, delete_unit
 import config
-from user_info import UserInfo, UserStatus
-from utils.utils import decrypt_secret_key
+import payments
+from server.misc import create_unit, init_unit, unit_exists, send_message_to_support, add_proxies, delete_unit, \
+    encrypt_private_key
+from server.user_info import UserInfo, UserStatus
+from telegram_bot.utils.misc import decrypt_private_key
 
 routes = web.RouteTableDef()
 
@@ -97,7 +96,7 @@ async def unit_start_handler(request: Request):
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     active_units = request.app['active_units']
-    if uid not in active_units.keys():
+    if uid not in active_units.keys() or active_units[uid] is None:
         loguru.logger.warning(f'SERVER:START_UNIT: unit {uid} is not initialized')
         return web.Response(status=409, text=f'Unit {uid} is not initialized')
 
@@ -169,6 +168,56 @@ async def set_settings_handler(request: Request):
             return web.Response(status=resp.status, text=await resp.text())
 
 
+@routes.post('/unit/{uid}/set_wallet_data')
+async def set_wallet_data_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    if uid is None:
+        loguru.logger.warning(f'SERVER:SET_WALLET_DATA: bad request')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/set_wallet_data')
+
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:SET_WALLET_DATA: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    data = await request.json()
+    if 'address' not in data or 'private_key' not in data:
+        loguru.logger.warning(f'SERVER:SET_WALLET_DATA: bad request')
+        return web.Response(status=400,
+                            text='Provide `address` and `private_key` parameters into body. For example: {"address": "1", "private_key": "2"}')
+
+    old_bot_wallet = None
+    old_encrypted_pk = None
+    try:
+        with UserInfo(f'./units/{uid}/.userinfo') as ui:
+            old_bot_wallet = ui.bot_wallet
+            ui.bot_wallet = data['address']
+
+        with open(f'./units/{uid}/data/private_key.txt', 'rb') as f:
+            old_encrypted_pk = f.read()
+
+        with open(f'./units/{uid}/data/private_key.txt', 'wb') as f:
+            pk = await decrypt_private_key(data['private_key'].encode(), config.BOT_API_TOKEN)
+            encrypted = await encrypt_private_key(pk)
+            f.write(encrypted)
+
+    except Exception as e:
+        if old_bot_wallet is not None:
+            loguru.logger.warning(f'SERVER:SET_WALLET_DATA: restoring bot wallet {uid}')
+            with UserInfo(f'./units/{uid}/.userinfo') as ui:
+                ui.bot_wallet = old_bot_wallet
+
+        if old_encrypted_pk is not None:
+            loguru.logger.warning(f'SERVER:SET_WALLET_DATA: restoring private key {uid}')
+            with open(f'./units/{uid}/data/private_key.txt', 'wb') as f:
+                f.write(old_encrypted_pk)
+
+        loguru.logger.error(f'SERVER:SET_WALLET_DATA: {e}')
+        await send_message_to_support(f'Ошибка при обновлении кошелька пользователя {uid}.\n\n{e}')
+        return web.Response(status=500, text=f'Error while updating wallet data to user {uid}\n{e}')
+
+    return web.Response(status=200)
+
+
 @routes.get('/unit/{uid}/get_private_key')
 async def get_private_key_handler(request: Request):
     uid = request.match_info.get('uid', None)
@@ -177,9 +226,10 @@ async def get_private_key_handler(request: Request):
         loguru.logger.warning(f'SERVER:IS_RUNNING: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
-    private_key = await decrypt_secret_key(f'./units/{uid}/data/private_key.txt',
-                                           '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
-    encrypted_to_send = await misc.encrypt_private_key(private_key, config.BOT_API_TOKEN)
+    with open(f'./units/{uid}/data/private_key.txt', 'rb') as f:
+        pk = f.read()
+    pk = await decrypt_private_key(pk)
+    encrypted_to_send = await encrypt_private_key(pk, config.BOT_API_TOKEN)
     return web.json_response(encrypted_to_send.decode('utf-8'))
 
 
@@ -263,6 +313,9 @@ async def get_user_info_handler(request: Request):
         except ClientResponseError:
             dict_ui['bot_balance_eth'] = 'Not loaded'
             dict_ui['bot_balance_weth'] = 'Not loaded'
+        except ValueError:
+            dict_ui['bot_balance_eth'] = 'Incorrect wallet format'
+            dict_ui['bot_balance_weth'] = 'Incorrect wallet format'
 
     return web.json_response(dict_ui)
 

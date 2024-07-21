@@ -10,9 +10,9 @@ from aiogram.types import InputFile, PhotoSize
 from aiogram.utils.formatting import Code, Bold
 
 import config
-import utils.keyboards as kbs
-from utils import api
-from utils.misc import decrypt_private_key
+import telegram_bot.utils.keyboards as kbs
+from telegram_bot.utils import api
+from telegram_bot.utils.misc import decrypt_private_key
 
 router = Router()
 

@@ -8,6 +8,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import as_key_value, as_list, Bold, Text
 from cryptography.fernet import Fernet
 
+import telegram_bot.utils.keyboards as kbs
+
 
 # Function to check if user is admin
 # todo: remove return True IN PRODUCTION
@@ -39,14 +41,19 @@ async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=Fal
         # means that previous event was message and we dont need to create new message
         with suppress(TelegramBadRequest):
             if previous_keyboard is None:
-                await query.message.delete()
+                await query.message.edit_text(
+                    'Привет, добро пожаловать в наш проект 0х1530. Это простой бот, позволяющий вам брать NFT через биды и всегда быть быстрее других.',
+                    parse_mode='HTML',
+                    reply_markup=kbs.get_welcome_keyboard(is_admin=await is_user_admin(query.from_user.id),
+                                                          uid=query.from_user.id))
+
             elif new_message:
                 if delete_old_message:
                     await query.message.delete()
 
-                await query.message.answer(text=previous_text, reply_markup=previous_keyboard)
+                await query.message.answer(text=previous_text, reply_markup=previous_keyboard, parse_mode='HTML')
             else:
-                await query.message.edit_text(text=previous_text, reply_markup=previous_keyboard)
+                await query.message.edit_text(text=previous_text, reply_markup=previous_keyboard, parse_mode='HTML')
 
         await state.set_state(previous_state)
         await state.update_data(previous_data)
@@ -54,11 +61,15 @@ async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=Fal
         await query.answer()
 
 
-async def decrypt_private_key(private_key: str, password: str) -> str:
+async def decrypt_private_key(private_key: bytes, password: str = None) -> str:
+    if password is None:
+        password = '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400'
     key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
     return Fernet(key).decrypt(private_key).decode()
 
 
-async def encrypt_private_key(private_key: str, password: str) -> bytes:
+async def encrypt_private_key(private_key: str, password: str = None) -> bytes:
+    if password is None:
+        password = '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400'
     key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
     return Fernet(key).encrypt(private_key.encode())

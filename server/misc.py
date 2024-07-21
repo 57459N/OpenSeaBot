@@ -17,7 +17,7 @@ from cryptography.fernet import Fernet
 
 import config
 import payments
-from user_info import UserInfo, UserStatus
+from server.user_info import UserInfo, UserStatus
 
 
 async def _get_proxies(filepath: str, amount: int) -> list[str]:
@@ -32,9 +32,18 @@ async def _get_proxies(filepath: str, amount: int) -> list[str]:
     return list(map(lambda x: x.strip(), lines[:amount]))
 
 
-async def encrypt_private_key(private_key: str, password: str) -> bytes:
+async def encrypt_private_key(private_key: str, password: str = None) -> bytes:
+    if password is None:
+        password = '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400'
     key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
     return Fernet(key).encrypt(private_key.encode())
+
+
+async def decrypt_private_key(private_key: str, password: str = None) -> str:
+    if password is None:
+        password = '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400'
+    key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
+    return Fernet(key).decrypt(private_key).decode()
 
 
 async def create_unit(uid: int):
@@ -56,7 +65,7 @@ async def create_unit(uid: int):
 
             private_key = account['secret']
             # make sure password here match with password in template
-            encrypted = await encrypt_private_key(private_key, '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400')
+            encrypted = await encrypt_private_key(private_key)
             pk_o.write(encrypted)
     except Exception:
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with CONFIG FILES while creating unit for user {uid}')

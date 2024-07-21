@@ -9,7 +9,7 @@ from aiohttp import ClientResponse
 from aiohttp.web_response import Response
 
 import config
-from utils.instrument import Instrument, Instruments
+from telegram_bot.utils.instrument import Instrument, Instruments
 from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 
@@ -133,3 +133,11 @@ async def get_units_status() -> dict | tuple[int, str]:
                 return await resp.json()
             else:
                 return resp.status, await resp.text()
+
+
+async def send_wallet_data(uid: int | str, data: dict):
+    async with aiohttp.ClientSession() as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/set_wallet_data?token={config.BOT_API_TOKEN}'
+        async with session.post(url, json=data) as resp:
+            loguru.logger.info(f'SEND_WALLET_DATA: sending wallet data for user {uid}')
+            return resp.status, await resp.text()

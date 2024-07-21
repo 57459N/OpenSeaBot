@@ -2,8 +2,8 @@ from aiogram import Router, types, flags
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Bold, Code
 
-from handlers.wallet_data.states import WalletDataStates
-from utils import keyboards as kbs
+from telegram_bot.handlers.wallet_data.states import WalletDataStates
+from telegram_bot.utils import keyboards as kbs
 
 router = Router()
 

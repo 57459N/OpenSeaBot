@@ -8,13 +8,13 @@ from aiogram import Router, types, F, flags
 from aiogram.fsm.context import FSMContext
 
 import config
-from handlers.callbacks_data import PaginationCallback, SelectCallback
-from middlwares.backable_query_middleware import BackableMiddleware
-from middlwares.sub_active_middleware import SubActiveMiddleware
-from utils import api
-from utils.misc import go_back
+from telegram_bot.handlers.callbacks_data import PaginationCallback, SelectCallback
+from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
+from telegram_bot.middlwares.sub_active_middleware import SubActiveMiddleware
+from telegram_bot.utils import api
+from telegram_bot.utils.misc import go_back
 
-import utils.keyboards as kbs
+import telegram_bot.utils.keyboards as kbs
 
 router = Router()
 router.callback_query.middleware(BackableMiddleware())

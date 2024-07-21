@@ -9,11 +9,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Code, Bold
 
 import config
-import misc
-import utils.keyboards as kbs
-from handlers.wallet_data.states import WalletDataStates
-from utils import api
-from utils.misc import decrypt_private_key
+import telegram_bot.utils.keyboards as kbs
+from telegram_bot.handlers.wallet_data.states import WalletDataStates
+from telegram_bot.utils import api
+from telegram_bot.utils.misc import decrypt_private_key, encrypt_private_key
 
 router = Router()
 
@@ -65,9 +64,13 @@ async def set_wallet_data_callback_handler(query: types.CallbackQuery, state: FS
     data = await state.get_data()
     address = data['address']
     private_key = data['private_key']
-    encrypted = await misc.encrypt_private_key(private_key, config.BOT_API_TOKEN)
+    encrypted = (await encrypt_private_key(private_key, config.BOT_API_TOKEN)).decode()
 
-    await api.send_unit_command(query.from_user.id, 'set_wallet_data',
-                                data={'address': address, 'private_key': encrypted})
+    status, text = await api.send_wallet_data(uid=query.from_user.id,
+                                              data={'address': address, 'private_key': encrypted})
+    if status != 200:
+        await query.message.answer('Произошла ошибка. Попробуйте снова позже или обратитесь в поддержку.',
+                                   reply_markup=kbs.get_support_keyboard())
+
     prev_message = data['prev_message']
     await prev_message.delete()

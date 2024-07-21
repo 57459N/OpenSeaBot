@@ -8,17 +8,17 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from handlers.command_handlers import router as command_router
-from handlers.callback_handlers import router as general_callbacks_router
-from handlers.dev import router as dev_router
-from handlers.givedays import router as givedays_router
-from handlers.broadcast import router as broadcast_router
-from handlers.instruments import router as instruments_router
-from handlers.sub_extend import router as sub_extend_router
-from handlers.add_proxies import router as add_proxies_router
-from handlers.create_unit import router as create_unit_router
-from handlers.init_unit import router as init_unit_router
-from handlers.wallet_data import router as wallet_data_router
+from telegram_bot.handlers.command_handlers import router as command_router
+from telegram_bot.handlers.callback_handlers import router as general_callbacks_router
+from telegram_bot.handlers.dev import router as dev_router
+from telegram_bot.handlers.givedays import router as givedays_router
+from telegram_bot.handlers.broadcast import router as broadcast_router
+from telegram_bot.handlers.instruments import router as instruments_router
+from telegram_bot.handlers.sub_extend import router as sub_extend_router
+from telegram_bot.handlers.add_proxies import router as add_proxies_router
+from telegram_bot.handlers.create_unit import router as create_unit_router
+from telegram_bot.handlers.init_unit import router as init_unit_router
+from telegram_bot.handlers.wallet_data import router as wallet_data_router
 
 
 import config

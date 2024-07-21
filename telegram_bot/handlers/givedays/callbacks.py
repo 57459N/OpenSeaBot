@@ -4,11 +4,11 @@ from aiogram import flags, types, F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
-import utils.keyboards as kbs
-from handlers.callbacks_data import PaginationCallback
-from handlers.givedays.states import GiveDaysStates
-from middlwares.backable_query_middleware import BackableMiddleware
-from utils import api
+import telegram_bot.utils.keyboards as kbs
+from telegram_bot.handlers.callbacks_data import PaginationCallback
+from telegram_bot.handlers.givedays.states import GiveDaysStates
+from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
+from telegram_bot.utils import api
 
 router = Router()
 

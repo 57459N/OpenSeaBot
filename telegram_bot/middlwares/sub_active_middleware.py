@@ -5,7 +5,7 @@ from aiogram import BaseMiddleware
 from aiogram.dispatcher.flags import get_flag
 from aiogram.types import Message, TelegramObject
 
-from utils import api
+from telegram_bot.utils import api
 
 
 class SubActiveMiddleware(BaseMiddleware):

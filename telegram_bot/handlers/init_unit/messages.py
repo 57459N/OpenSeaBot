@@ -5,7 +5,7 @@ from aiogram import Router, types, flags
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
-from handlers.create_unit.states import InitUnitStates
-from utils import api
+from telegram_bot.handlers.create_unit.states import InitUnitStates
+from telegram_bot.utils import api
 
 router = Router()

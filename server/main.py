@@ -10,8 +10,8 @@ sys.path.append(os.getcwd())
 
 from aiohttp.web_request import Request
 
-from routes import routes
-from misc import init_unit, Unit, daily_sub_balance_decrease, validate_token
+from server.routes import routes
+from server.misc import init_unit, Unit, daily_sub_balance_decrease, validate_token
 
 
 async def daily_ctx(app: web.Application):
