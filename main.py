@@ -5,6 +5,9 @@ import sys
 sys.path.append(os.getcwd())
 
 
+# todo: unit init admin panel
+# todo: add proxies to specific user
+
 def main():
     telegram_bot_proc = subprocess.Popen([sys.executable, 'telegram_bot/main.py'])
     server = subprocess.Popen([sys.executable, 'server/main.py', '8887'])
