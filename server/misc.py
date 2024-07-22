@@ -179,7 +179,7 @@ async def add_proxies(filepath: str, proxies: list[str]):
         return proxy.strip() + '\n'
 
     async with aiofiles.open(filepath, 'a') as f:
-        await f.writelines(list(map(process, proxies)) + ['\n'])
+        await f.writelines(list(map(process, proxies)))
 
 
 def delete_unit(uid: int | str, active_units: dict[str, Unit]):

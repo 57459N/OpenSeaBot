@@ -124,6 +124,7 @@ def get_admin_menu_keyboard():
 def get_to_who_add_proxies_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="Список свободных", callback_data='add_proxies_idle'))
+            .add(InlineKeyboardButton(text="Пользователю", callback_data='add_proxies_user'))
             .add(InlineKeyboardButton(text="Назад", callback_data='back'))
             .adjust(1, 1)
             .as_markup())

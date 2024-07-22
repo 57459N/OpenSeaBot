@@ -329,12 +329,35 @@ async def add_idle_proxies_handler(request: Request):
         for el in proxies:
             if not isinstance(el, str):
                 raise ValueError
-    except Exception:
+    except ValueError:
         loguru.logger.warning(f'SERVER:ADD_IDLE_PROXIES: bad request')
         return web.Response(status=400, text='`proxies` must be a list of strings in json format')
 
     await add_proxies('./.idle_proxies', proxies)
     loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies added')
+    return web.Response()
+
+
+@routes.post('/unit/{uid}/add_proxies')
+async def add_unit_proxies_handler(request: Request):
+    try:
+        proxies = await request.json()
+        if not isinstance(proxies, list):
+            raise ValueError
+        for el in proxies:
+            if not isinstance(el, str):
+                raise ValueError
+    except ValueError:
+        loguru.logger.warning(f'SERVER:ADD_UNIT_PROXIES: bad request')
+        return web.Response(status=400, text='`proxies` must be a list of strings in json format')
+
+    uid = request.match_info.get('uid', None)
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:ADD_UNIT_PROXIES: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    await add_proxies(f'./units/{uid}/proxies.txt', proxies)
+    loguru.logger.info(f'SERVER:ADD_UNIT_PROXIES: {len(proxies)} proxies added to user {uid}')
     return web.Response()
 
 

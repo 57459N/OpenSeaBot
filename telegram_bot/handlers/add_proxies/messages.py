@@ -7,12 +7,12 @@ from aiogram import Router, types, flags
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Document, File
 
-from .states import AddIdleProxiesStates
+from .states import AddProxiesStates
 
 router = Router()
 
 
-@router.message(AddIdleProxiesStates.list)
+@router.message(AddProxiesStates.list)
 async def add_proxies_message_handler(message: types.Message, state: FSMContext):
     text = message.text
 
@@ -32,7 +32,7 @@ async def add_proxies_message_handler(message: types.Message, state: FSMContext)
     if proxies_list is None:
         proxies_list = []
     proxies_list.extend(added_proxies)
-
+    await message.delete()
     await state.update_data(proxies=proxies_list)
 
 
