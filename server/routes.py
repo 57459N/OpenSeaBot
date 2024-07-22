@@ -12,7 +12,7 @@ from aiohttp.web_request import Request
 import config
 import payments
 from server.misc import create_unit, init_unit, unit_exists, send_message_to_support, add_proxies, delete_unit, \
-    encrypt_private_key
+    encrypt_private_key, deinit_unit
 from server.user_info import UserInfo, UserStatus
 from telegram_bot.utils.misc import decrypt_private_key
 
@@ -50,6 +50,27 @@ async def unit_init_handler(request: Request):
         return web.Response(text='OK', status=200)
     except Exception as e:
         loguru.logger.error(f'SERVER:INIT_UNIT: {e}')
+        return web.Response(status=500, text=str(e))
+
+
+@routes.get('/unit/{uid}/deinit')
+async def unit_deinit_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    if uid not in request.app['active_units']:
+        loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not initialized')
+        return web.Response(status=409, text=f'Unit {uid} is not initialized')
+
+    unit = request.app['active_units'].pop(uid)
+    try:
+        deinit_unit(unit)
+        loguru.logger.info(f'SERVER:DEINIT_UNIT: unit {unit.port} deinitialized')
+        return web.Response()
+    except Exception as e:
+        loguru.logger.error(f'SERVER:DEINIT_UNIT: {e}')
         return web.Response(status=500, text=str(e))
 
 

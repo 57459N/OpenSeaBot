@@ -15,3 +15,8 @@ class InstrumentCallback(CallbackData, prefix='inst'):
     inst: str = None
     act: str = None
     param: str = None
+
+
+class UnitCallbackData(CallbackData, prefix='unit'):
+    uid: str
+    action: bool

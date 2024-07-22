@@ -3,7 +3,8 @@ import config
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from telegram_bot.handlers.callbacks_data import SelectCallback, PaginationCallback, InstrumentCallback
+from telegram_bot.handlers.callbacks_data import SelectCallback, PaginationCallback, InstrumentCallback, \
+    UnitCallbackData
 
 from telegram_bot.utils.api import INSTRUMENTS
 
@@ -292,3 +293,15 @@ def get_skip_keyboard(callback_data: str):
             .add(InlineKeyboardButton(text="Пропустить", callback_data=callback_data))
             .adjust(1)
             .as_markup())
+
+
+def get_units_keyboard(units: dict[str, bool]):
+    b = InlineKeyboardBuilder()
+
+    for uid, is_active in sorted(units.items()):
+        b.add(InlineKeyboardButton(text=f'{"🟢" if is_active else "🔴"} {uid}',
+                                   callback_data=UnitCallbackData(uid=uid, action=not is_active).pack()))
+
+    b.add(InlineKeyboardButton(text="Закрыть", callback_data='delete_message'))
+    b.adjust(*(2 for _ in range((len(units) + 1) // 2)))
+    return b.as_markup()

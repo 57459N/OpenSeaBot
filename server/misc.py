@@ -110,17 +110,23 @@ def init_unit(uid: str) -> Unit:
     port = get_free_port()
     if not os.path.exists(f'./units/{uid}/unit.py'):
         loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
-        return None
+        raise Exception(f'Юнит {uid} не существует')
 
     with open(f'./units/{uid}/proxies.txt', 'r') as f:
         if len(set(filter(lambda x: x.strip(), f.readlines()))) == 0:
             loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} has no proxies')
-            return None
+            raise Exception(f'Юнит {uid} не имеет прокси')
 
     process = Popen([sys.executable, f'unit.py', f'{port}'], cwd=f'./units/{uid}')
     unit = Unit(port=port, process=process)
     loguru.logger.info(f'SERVER:INIT_UNIT: unit {uid} initialized on port {port}')
     return unit
+
+
+def deinit_unit(unit: Unit):
+    if unit is None:
+        raise ValueError('Unit is None')
+    unit.process.terminate()
 
 
 def validate_token(token: str) -> bool:

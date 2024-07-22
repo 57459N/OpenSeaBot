@@ -37,8 +37,12 @@ def main():
 
     if not os.path.exists('./units'):
         os.mkdir('./units')
-    for uid in os.listdir('./units'):
-        active_units[uid] = init_unit(uid)
+    try:
+        for uid in os.listdir('./units'):
+            active_units[uid] = init_unit(uid)
+    except Exception:
+        pass
+
     time.sleep(5)
     port = 8887
     if len(sys.argv) == 2:

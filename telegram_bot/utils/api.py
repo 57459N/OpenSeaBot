@@ -148,3 +148,10 @@ async def send_wallet_data(uid: int | str, data: dict):
         async with session.post(url, json=data) as resp:
             loguru.logger.info(f'SEND_WALLET_DATA: sending wallet data for user {uid}')
             return resp.status, await resp.text()
+
+async def unit_init_deinit(uid: int | str, init: bool):
+    async with aiohttp.ClientSession() as session:
+        action = 'init' if init else 'deinit'
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{action}?token={config.BOT_API_TOKEN}'
+        async with session.get(url) as resp:
+            return resp.status, await resp.text()

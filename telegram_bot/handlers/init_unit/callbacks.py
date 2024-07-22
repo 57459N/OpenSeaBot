@@ -1,4 +1,5 @@
 import sys
+from contextlib import suppress
 
 import loguru
 import os
@@ -8,6 +9,7 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.fsm.context import FSMContext
 
 import utils.keyboards as kbs
+from handlers.callbacks_data import UnitCallbackData
 from telegram_bot.handlers.create_unit.states import InitUnitStates
 from telegram_bot.utils import api
 
@@ -23,8 +25,28 @@ async def create_unit_callback_handler(query: types.CallbackQuery, state: FSMCon
         await query.message.answer('Ошибка при получении стасусов юнитов')
         await query.answer()
         return
+    await state.update_data(units=units)
+    await query.message.edit_text('Юниты', reply_markup=kbs.get_units_keyboard(units))
+    await query.answer()
 
-    # todo: activate units via clicking inline button with its id and username
-    inactive_units = '\n\t'.join([k for k, v in units.items() if not v])
-    await query.message.answer(f'Неактивные юниты:\n\t{inactive_units}')
+
+@router.callback_query(UnitCallbackData.filter())
+@flags.backable()
+async def init_unit_callback_handler(query: types.CallbackQuery, callback_data: UnitCallbackData, state: FSMContext):
+    uid = callback_data.uid
+    action = callback_data.action
+
+    data = await state.get_data()
+    units = data.get('units')
+
+    status, text = await api.unit_init_deinit(uid, action)
+    if 200 <= status < 300:
+        units[uid] = action
+    else:
+        await query.answer(text, show_alert=True)
+        return
+
+    await state.update_data(units=units)
+    with suppress(TelegramBadRequest):
+        await query.message.edit_text('Юниты', reply_markup=kbs.get_units_keyboard(units))
     await query.answer()
