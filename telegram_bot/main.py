@@ -27,11 +27,11 @@ TOKEN = config.BOT_API_TOKEN
 
 
 async def main() -> None:
-    # Initialize Bot instance with default bot properties which will be passed to all API calls
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
 
-    # Register routers
+    await bot.delete_webhook(drop_pending_updates=True)
+
     dp.include_routers(
         command_router,
         general_callbacks_router,
@@ -46,7 +46,6 @@ async def main() -> None:
         wallet_data_router,
     )
 
-    # Start polling
     await dp.start_polling(bot)
 
 
