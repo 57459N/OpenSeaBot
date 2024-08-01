@@ -15,7 +15,7 @@ from bidder.bidder_client import work_client
 routes = web.RouteTableDef()
 
 unit_port = -1
-unit_uid = int(os.getcwd().split('\\')[-1])
+unit_uid = int(os.path.basename(os.path.normpath(os.getcwd())))
 
 
 @routes.get('/start')
@@ -28,8 +28,6 @@ async def start_get(request):
     if os.path.getsize(f'proxies.txt') == 0:
         loguru.logger.error(f'UNIT:START: proxies.txt is empty')
         return web.Response(status=503, text=f'No proxies provided')
-
-
 
     await change_work_statement({"work_statement": True})  # True - софт пашет | False - останавливается
     await start_program()
