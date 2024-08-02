@@ -23,6 +23,9 @@ abi = [
 ]
 
 
+class RPCConnection:
+    pass
+
 async def generate_account() -> dict:
     account = Account.create()
 

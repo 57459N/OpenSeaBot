@@ -8,6 +8,7 @@ from aiogram.utils.formatting import Code
 from aiohttp import web, ClientResponseError
 import aiohttp
 from aiohttp.web_request import Request
+from web3 import Account
 
 import config
 import payments
@@ -201,36 +202,38 @@ async def set_wallet_data_handler(request: Request):
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     data = await request.json()
-    if 'address' not in data or 'private_key' not in data:
+    if 'private_key' not in data:
         loguru.logger.warning(f'SERVER:SET_WALLET_DATA: bad request')
         return web.Response(status=400,
                             text='Provide `address` and `private_key` parameters into body. For example: {"address": "1", "private_key": "2"}')
 
     old_bot_wallet = None
     old_encrypted_pk = None
-    try:
-        with UserInfo(f'./units/{uid}/.userinfo') as ui:
-            old_bot_wallet = ui.bot_wallet
-            ui.bot_wallet = data['address']
+    new_pk = await decrypt_private_key(data['private_key'].encode(), config.BOT_API_TOKEN)
 
+    try:
         with open(f'./units/{uid}/data/private_key.txt', 'rb') as f:
             old_encrypted_pk = f.read()
 
         with open(f'./units/{uid}/data/private_key.txt', 'wb') as f:
-            pk = await decrypt_private_key(data['private_key'].encode(), config.BOT_API_TOKEN)
-            encrypted = await encrypt_private_key(pk)
+            encrypted = await encrypt_private_key(new_pk)
             f.write(encrypted)
 
-    except Exception as e:
-        if old_bot_wallet is not None:
-            loguru.logger.warning(f'SERVER:SET_WALLET_DATA: restoring bot wallet {uid}')
-            with UserInfo(f'./units/{uid}/.userinfo') as ui:
-                ui.bot_wallet = old_bot_wallet
+        with UserInfo(f'./units/{uid}/.userinfo') as ui:
+            old_bot_wallet = ui.bot_wallet
+            acc = Account.from_key(new_pk)
+            ui.bot_wallet = acc.address
 
+    except Exception as e:
         if old_encrypted_pk is not None:
             loguru.logger.warning(f'SERVER:SET_WALLET_DATA: restoring private key {uid}')
             with open(f'./units/{uid}/data/private_key.txt', 'wb') as f:
                 f.write(old_encrypted_pk)
+
+        if old_bot_wallet is not None:
+            loguru.logger.warning(f'SERVER:SET_WALLET_DATA: restoring bot wallet {uid}')
+            with UserInfo(f'./units/{uid}/.userinfo') as ui:
+                ui.bot_wallet = old_bot_wallet
 
         loguru.logger.error(f'SERVER:SET_WALLET_DATA: {e}')
         await send_message_to_support(f'Ошибка при обновлении кошелька пользователя {uid}.\n\n{e}')
@@ -244,7 +247,7 @@ async def get_private_key_handler(request: Request):
     uid = request.match_info.get('uid', None)
 
     if not unit_exists(uid):
-        loguru.logger.warning(f'SERVER:IS_RUNNING: unit {uid} not found')
+        loguru.logger.warning(f'SERVER:GET_PRIVATE_KEY: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     with open(f'./units/{uid}/data/private_key.txt', 'rb') as f:

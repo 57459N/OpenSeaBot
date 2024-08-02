@@ -96,7 +96,7 @@ INSTRUMENTS = Instruments(
 )
 
 
-async def send_unit_command(uid: int | str, command: str, data=None) -> dict | tuple[int, str]:
+async def send_unit_command(uid: int | str, command: str, data=None) -> dict | tuple[int, str] | str:
     if data is None:
         data = {}
     async with aiohttp.ClientSession() as session:
@@ -117,7 +117,7 @@ async def increase_user_balance(uid, paid_amount):
             return 200 <= resp.status < 300
 
 
-async def add_proxies(proxies: list[str], uid: int | str | None) -> bool:
+async def add_proxies(proxies: list[str], uid: int | str | None) -> tuple[int, str]:
     """
     if uid is None, proxies will be added to idle list\n
     else to specified unit
@@ -129,7 +129,7 @@ async def add_proxies(proxies: list[str], uid: int | str | None) -> bool:
             url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/add_proxies?token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'ADD_PROXIES: adding {len(proxies)} proxies')
         async with session.post(url, json=proxies) as resp:
-            return 200 <= resp.status < 300
+            return resp.status, await resp.text()
 
 
 async def get_units_status() -> dict | tuple[int, str]:
@@ -148,6 +148,7 @@ async def send_wallet_data(uid: int | str, data: dict):
         async with session.post(url, json=data) as resp:
             loguru.logger.info(f'SEND_WALLET_DATA: sending wallet data for user {uid}')
             return resp.status, await resp.text()
+
 
 async def unit_init_deinit(uid: int | str, init: bool):
     async with aiohttp.ClientSession() as session:

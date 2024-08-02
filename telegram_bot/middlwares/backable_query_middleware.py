@@ -15,15 +15,16 @@ class BackableMiddleware(BaseMiddleware):
     ) -> Any:
 
         if isinstance(event, Message):
-            message = data.get['prev_message']
+            message: Message = data.get['prev_message']
         else:
-            message = event.message
+            message: Message = event.message
 
         if get_flag(data, "backable") is not None:
             state = data['state']
+
             await data['state'].update_data(previous_state=await state.get_state(),
                                             previous_data=copy(await state.get_data()),
                                             previous_keyboard=message.reply_markup,
-                                            previous_text=message.text)
+                                            previous_text=message.html_text)
 
         return await handler(event, data)

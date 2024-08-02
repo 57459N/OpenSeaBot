@@ -12,7 +12,7 @@ from telegram_bot.handlers.callbacks_data import PaginationCallback, SelectCallb
 from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
 from telegram_bot.middlwares.sub_active_middleware import SubActiveMiddleware
 from telegram_bot.utils import api
-from telegram_bot.utils.misc import go_back
+from telegram_bot.utils.misc import go_back, send_main_menu
 
 import telegram_bot.utils.keyboards as kbs
 
@@ -83,12 +83,12 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
         bot_balance_eth = sub_info.get('bot_balance_eth', 'No info')
         bot_balance_weth = sub_info.get('bot_balance_weth', 'No info')
     else:
-        status = 'Not loaded'
-        days_left = 'Not loaded'
-        own_balance = 'Not loaded'
-        bot_wallet = 'Not loaded'
-        bot_balance_eth = 'Not loaded'
-        bot_balance_weth = 'Not loaded'
+        status = 'Неактивна'
+        days_left = '0'
+        own_balance = '0'
+        bot_wallet = None
+        bot_balance_eth = None
+        bot_balance_weth = None
 
     text = f'''
 Привет, @{query.from_user.username}!
@@ -98,13 +98,19 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
 Статус подписки: {status}
 Осталось дней до конца подписки: {days_left}
 Ваш баланс: {own_balance}
+'''
 
+    if bot_wallet:
+        text += f'''
 Баланс бота (eth): {bot_balance_eth}
 Баланс бота (weth): {bot_balance_weth}
 Кошелек бота: {Code(bot_wallet).as_html()}
 '''
+    else:
+        text += '\n<b>Ваш аккаунт не создан. Оплатите подписку, чтобы получить доступ к боту</b>'
+
     with suppress(TelegramBadRequest):
-        await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard())
+        await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard(), parse_mode='HTML')
     await query.answer()
 
 
@@ -125,6 +131,11 @@ async def extend_sub_callback_handler(query: types.CallbackQuery, state: FSMCont
 
     await query.message.edit_text(text=text, reply_markup=kbs.get_instruments_keyboard())
     await query.answer()
+
+
+@router.callback_query(lambda query: query.data == 'main_menu')
+async def main_menu_callback_handler(query: types.CallbackQuery):
+    await send_main_menu(query.from_user.id, query.bot, query.message)
 
 
 # Admin menu #

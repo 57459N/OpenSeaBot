@@ -112,11 +112,6 @@ def init_unit(uid: str) -> Unit:
         loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
         raise Exception(f'Юнит {uid} не существует')
 
-    with open(f'./units/{uid}/proxies.txt', 'r') as f:
-        if len(set(filter(lambda x: x.strip(), f.readlines()))) == 0:
-            loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} has no proxies')
-            raise Exception(f'Юнит {uid} не имеет прокси')
-
     process = Popen([sys.executable, f'unit.py', f'{port}'], cwd=f'./units/{uid}')
     unit = Unit(port=port, process=process)
     loguru.logger.info(f'SERVER:INIT_UNIT: unit {uid} initialized on port {port}')

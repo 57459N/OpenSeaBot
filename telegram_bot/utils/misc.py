@@ -2,9 +2,11 @@ import hashlib
 from contextlib import suppress
 
 import aiofiles
+import aiogram
 from aiogram import types
 from aiogram.exceptions import TelegramNetworkError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
 from aiogram.utils.formatting import as_key_value, as_list, Bold, Text
 from cryptography.fernet import Fernet
 
@@ -41,11 +43,7 @@ async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=Fal
         # means that previous event was message and we dont need to create new message
         with suppress(TelegramBadRequest):
             if previous_keyboard is None:
-                await query.message.edit_text(
-                    'Привет, добро пожаловать в наш проект 0х1530. Это простой бот, позволяющий вам брать NFT через биды и всегда быть быстрее других.',
-                    parse_mode='HTML',
-                    reply_markup=kbs.get_welcome_keyboard(is_admin=await is_user_admin(query.from_user.id),
-                                                          uid=query.from_user.id))
+                await send_main_menu(query.from_user.id, query.bot, query.message)
 
             elif new_message:
                 if delete_old_message:
@@ -59,6 +57,22 @@ async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=Fal
         await state.update_data(previous_data)
 
         await query.answer()
+
+
+async def send_main_menu(uid: str | int, bot: aiogram.Bot, message: Message = None):
+    text = 'Привет, добро пожаловать в наш проект 0х1530. Это простой бот, позволяющий вам брать NFT через биды и всегда быть быстрее других.'
+    if message:
+        await message.edit_text(
+            text=text,
+            reply_markup=kbs.get_welcome_keyboard(is_admin=await is_user_admin(uid), uid=uid),
+            parse_mode='HTML')
+    else:
+        await bot.send_message(
+            uid,
+            text=text,
+            reply_markup=kbs.get_welcome_keyboard(is_admin=await is_user_admin(uid), uid=uid),
+            parse_mode='HTML'
+        )
 
 
 async def decrypt_private_key(private_key: bytes, password: str = None) -> str:

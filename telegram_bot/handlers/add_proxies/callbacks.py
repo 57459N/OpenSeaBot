@@ -79,8 +79,15 @@ async def add_proxies_list_callback_handler(query: types.CallbackQuery, state: F
     if to_who == 'user':
         uid = data.get('user_id', None)
 
-    await api.add_proxies(proxies, uid)
-    await query.message.delete()
+    status, text = await api.add_proxies(proxies, uid)
+
+    if status == 200:
+        await query.message.edit_text('Прокси добавлены')
+        await asyncio.sleep(3)
+        await query.message.delete()
+    else:
+        await query.message.edit_text(text)
+
     await query.answer()
 
 
