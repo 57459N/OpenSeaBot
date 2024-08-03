@@ -11,8 +11,8 @@ import asyncio
 
 import config
 from encryption.system import encrypt_private_key, decrypt_private_key
-from db import DataBase
-from rpc import RPCRequestManager
+from .db import DataBase
+from .rpc import RPCRequestManager
 
 abi = [
     {
