@@ -12,7 +12,7 @@ from aiogram.utils.formatting import Code, Bold
 import config
 import telegram_bot.utils.keyboards as kbs
 from telegram_bot.utils import api
-from encryption import decrypt_private_key
+from encryption.system import decrypt_private_key
 
 router = Router()
 

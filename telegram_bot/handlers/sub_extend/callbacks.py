@@ -9,7 +9,7 @@ from aiogram import Router, flags, types
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Code
-from payments import Wallet, manager as payments_manager
+from payments.system import Wallet, manager as payments_manager
 from telegram_bot.handlers.sub_extend.states import SubExtendStates
 from telegram_bot.utils import api
 

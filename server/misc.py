@@ -15,8 +15,8 @@ import aiohttp
 from aiohttp import web
 
 import config
-from encryption import encrypt_private_key
-from payments import manager as payments_manager
+from encryption.system import encrypt_private_key
+from payments.system import manager as payments_manager
 from server.user_info import UserInfo, UserStatus
 
 

@@ -10,7 +10,7 @@ from web3.eth import AsyncEth
 import asyncio
 
 import config
-from encryption import encrypt_private_key, decrypt_private_key
+from encryption.system import encrypt_private_key, decrypt_private_key
 from db import DataBase
 from rpc import RPCRequestManager
 

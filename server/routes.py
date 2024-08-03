@@ -11,11 +11,11 @@ from aiohttp.web_request import Request
 from web3 import Account
 
 import config
-from payments import manager as payments_manager
+from payments.system import manager as payments_manager
 from server.misc import create_unit, init_unit, unit_exists, send_message_to_support, add_proxies, delete_unit, \
     encrypt_private_key, deinit_unit
 from server.user_info import UserInfo, UserStatus
-from encryption import decrypt_private_key
+from encryption.system import decrypt_private_key
 
 routes = web.RouteTableDef()
 
