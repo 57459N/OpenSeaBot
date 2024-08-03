@@ -12,7 +12,7 @@ import config
 import telegram_bot.utils.keyboards as kbs
 from telegram_bot.handlers.wallet_data.states import WalletDataStates
 from telegram_bot.utils import api
-from telegram_bot.utils.misc import decrypt_private_key, encrypt_private_key
+from encryption import decrypt_private_key, encrypt_private_key
 
 router = Router()
 

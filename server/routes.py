@@ -15,7 +15,7 @@ from payments import manager as payments_manager
 from server.misc import create_unit, init_unit, unit_exists, send_message_to_support, add_proxies, delete_unit, \
     encrypt_private_key, deinit_unit
 from server.user_info import UserInfo, UserStatus
-from telegram_bot.utils.misc import decrypt_private_key
+from encryption import decrypt_private_key
 
 routes = web.RouteTableDef()
 

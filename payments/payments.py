@@ -60,6 +60,7 @@ class PaymentsManager:
         account = Account.create()
         wallet = Wallet(address=account.address, private_key=account.key.hex())
 
+        encrypted = encrypt
         self.db.insert(uid, wallet.address, wallet.private_key, False)
         return wallet
 

@@ -13,10 +13,9 @@ from subprocess import Popen
 import aiofiles
 import aiohttp
 from aiohttp import web
-from cryptography.fernet import Fernet
-
 
 import config
+from encryption import encrypt_private_key
 from payments import manager as payments_manager
 from server.user_info import UserInfo, UserStatus
 
@@ -31,20 +30,6 @@ async def _get_proxies(filepath: str, amount: int) -> list[str]:
         _out.writelines(lines[amount:])
 
     return list(map(lambda x: x.strip(), lines[:amount]))
-
-
-async def encrypt_private_key(private_key: str, password: str = None) -> bytes:
-    if password is None:
-        password = '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400'
-    key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
-    return Fernet(key).encrypt(private_key.encode())
-
-
-async def decrypt_private_key(private_key: str, password: str = None) -> str:
-    if password is None:
-        password = '8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400'
-    key = hashlib.sha256(password.encode()).hexdigest()[:43] + "="
-    return Fernet(key).decrypt(private_key).decode()
 
 
 async def create_unit(uid: int):
