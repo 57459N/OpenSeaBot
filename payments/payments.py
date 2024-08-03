@@ -60,7 +60,7 @@ class PaymentsManager:
         account = Account.create()
         wallet = Wallet(address=account.address, private_key=account.key.hex())
 
-        await self.db.insert(uid, wallet.address, wallet.private_key, False)
+        self.db.insert(uid, wallet.address, wallet.private_key, False)
         return wallet
 
     @staticmethod
@@ -83,17 +83,19 @@ class PaymentsManager:
                                      "0xdAC17F958D2ee523a2206206994597C13D831ec7"])
 
                 for resp in result:
+                    resp['balance'] = 259  # todo: DELETE IN PRODUCTION
                     if resp["balance"] > 0:
+                        self.db.set_paid(wallet.address, resp["balance"])
                         loguru.logger.info(
                             f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
                         return resp
 
-                loguru.logger.info(f'Nothin was found at address: {address}')
                 await asyncio.sleep(10)
-
             except Exception as _err:
                 logger.exception(_err)
                 await asyncio.sleep(10)
+
+        loguru.logger.info(f'Nothin was found at address: {address}')
 
     async def fetch_balance(self, address: str, token_addresses: list[str]):
         return await self.rpcs.get_first(self._fetch_balance, address=address, token_addresses=token_addresses)
@@ -131,7 +133,7 @@ class PaymentsManager:
     @staticmethod
     async def _fetch_bot_balance(w3: Web3, _address: str) -> dict:
         address = Web3.to_checksum_address(_address)
-        weth_balance = await RPCRequestManager._fetch_balance(
+        weth_balance = await PaymentsManager._fetch_balance(
             w3, address, ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"]
         )
         eth_balance = float(Web3.from_wei(await w3.eth.get_balance(address), "ether"))
@@ -141,117 +143,4 @@ class PaymentsManager:
         }
 
 
-async def connect_to_all_rpcs(config: dict) -> dict:
-    result = {}
-    for name in config.keys():
-        result.update(
-            {
-                name: Web3(
-                    Web3.AsyncHTTPProvider(
-                        config[name]["rpc"],
-                        request_kwargs={"ssl": False}
-                    ),
-                    modules={"eth": (AsyncEth,)},
-                    middlewares=[]
-                )
-            }
-        )
-    return result
-
-
-async def fetch_balance(w3: Web3, address: str, token_addresses: list) -> dict:
-    results = []
-
-    for token in token_addresses:
-        try:
-            contract = w3.eth.contract(Web3.to_checksum_address(token), abi=abi)
-            balance = await contract.functions.balanceOf(address).call()
-
-            if balance > 0:
-                decimals = await contract.functions.decimals().call()
-                balance = round(balance / 10 ** decimals, 2)
-
-            results.append(
-                {
-                    "chain_id": await w3.eth.chain_id,
-                    "balance": balance
-                }
-            )
-
-        except Exception as _err:
-            logger.exception(_err)
-            results.append(
-                {
-                    "chain_id": 0,
-                    "balance": 0
-                }
-            )
-
-    return results
-
-
-async def check_payment_handler(config: dict, _address: str, timeout: int = 60) -> dict:
-    """
-    config = {
-        "arbitrum": {
-            "rpc": "",
-            "tokens": []
-        },
-        "ethereum": {
-            "rpc": "",
-            "tokens": []
-        }
-    }
-    """
-    address = Web3.to_checksum_address(_address)
-    deadline = time.time() + timeout
-
-    connected_rpcs = await connect_to_all_rpcs(config)
-
-    while time.time() < deadline:
-        try:
-            tasks = [
-                fetch_balance(
-                    connected_rpcs[name], address, config[name]["tokens"]
-                ) for name in config.keys()
-            ]
-
-            results = await asyncio.gather(*tasks)
-
-            for batch_response in results:
-                for resp in batch_response:
-                    if resp["balance"] > 0:
-                        logger.info(
-                            f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
-                        return resp
-
-            logger.info(f'Nothin was found at address: {address}')
-            await asyncio.sleep(10)
-
-        except Exception as _err:
-            logger.exception(_err)
-            await asyncio.sleep(10)
-
-
-async def fetch_bot_balance(_address: str) -> dict:
-    address = Web3.to_checksum_address(_address)
-
-    w3 = Web3(
-        Web3.AsyncHTTPProvider(
-            "https://1rpc.io/eth",
-            request_kwargs={"ssl": False}
-        ),
-        modules={"eth": (AsyncEth,)},
-        middlewares=[]
-    )
-
-    weth_balance = await fetch_balance(
-        w3, address, ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"]
-    )
-
-    eth_balance = float(Web3.from_wei(await w3.eth.get_balance(address), "ether"))
-
-    return {
-        "weth": weth_balance[0]["balance"],
-        "eth": eth_balance
-    }
+manager = PaymentsManager()

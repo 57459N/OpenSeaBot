@@ -1,44 +1,41 @@
-import asyncio
 import pathlib
-from pathlib import Path
-
-from aiosqlite import connect, Connection
+import sqlite3
 
 
 class DataBase:
     def __init__(self):
-        self.connection: Connection = connect(pathlib.Path(__file__).parent / "data" / "temporaries.db")
-        asyncio.create_task(self._create_table())
+        self.path = pathlib.Path(__file__).parent / "data" / "temporary_wallets.db"
+        self.connection = sqlite3.connect(self.path)
 
-    def get_connection(self) -> Connection:
-        return self.connection
+    def _create_table(self):
+        c = self.connection
+        c.execute("create table if not exists temporary_wallets"
+                  "("
+                  "uid INTEGER, "
+                  "address TEXT not null, "
+                  "private_key TEXT not null, "
+                  "paid INTEGER not null, "
+                  "PRIMARY KEY (uid, address)"
+                  ");")
 
-    async def _create_table(self):
-        await self.connection.execute("create table if not exists temporary_wallets"
-                                      "("
-                                      "uid INTEGER PRIMARY KEY,"
-                                      "address TEXT not null ,"
-                                      "secret TEXT not null ,"
-                                      "paid INTEGER not null"
-                                      ")")
-        await self.connection.execute("create unique index if not exists user_wallet_index "
-                                      "on temporary_wallets (uid, address)")
-        await self.connection.commit()
+        c.execute("create unique index if not exists user_wallet_index "
+                  "on temporary_wallets (uid, address)")
+        c.commit()
 
-    async def insert(self, uid: str | int, address: str, secret: str, paid: bool):
-        await self.connection.execute('''
-            INSERT INTO temporary_wallets (uid, address, secret, paid)
+    def insert(self, uid: str | int, address: str, secret: str, paid: int):
+        self.connection.execute('''
+            INSERT INTO temporary_wallets (uid, address, private_key, paid)
             VALUES (?, ?, ?, ?)
-        ''', (uid, address, secret, paid))
-        await self.connection.commit()
+        ''', (uid, address, secret, int(paid)))
+        self.connection.commit()
 
-    async def set_paid(self, uid: str | int, paid: bool):
-        await self.connection.execute('''
+    def set_paid(self, address: str, paid: int):
+        self.connection.execute('''
             UPDATE temporary_wallets
             SET paid = ?
-            WHERE uid = ?
-        ''', (paid, uid))
-        await self.connection.commit()
+            WHERE address = ?
+        ''', (int(paid), address))
+        self.connection.commit()
 
     def __del__(self):
         if con := self.connection:

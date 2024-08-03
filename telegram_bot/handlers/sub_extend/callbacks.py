@@ -1,19 +1,19 @@
 import asyncio
-import dataclasses
-
 import loguru
+
 from asyncio import CancelledError
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from aiogram import Router, flags, types
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Code
-import payments
-import config
+from payments import Wallet, manager as payments_manager
 from telegram_bot.handlers.sub_extend.states import SubExtendStates
 from telegram_bot.utils import api
+
+import config
 import telegram_bot.utils.keyboards as kbs
 
 router = Router()
@@ -43,46 +43,28 @@ async def sub_extend_callback_handler(query: types.CallbackQuery, state: FSMCont
 @router.callback_query(lambda query: query.data == 'sub_extend_generate')
 async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery, state: FSMContext):
     uid = query.from_user.id
-    # todo: UNCOMMENT WITH REAL PAYMENT SYSTEM
-    # account = await payments.generate_account()
-    # wallet = Wallet(address=account['address'],
-    #                 expires=datetime.now() + timedelta(seconds=config.TEMP_WALLET_EXPIRE_SECONDS))
+    wallet = await payments_manager.get_temporary_wallet(uid)
     loguru.logger.info(f'SUB_EXTEND: generating wallet for {uid}')
-    # todo: change address to address from account
-    wallet = Wallet(address=('TEST WALLET ACC ADDRESS'))
 
     await state.update_data(wallet=wallet)
     await query.answer()
 
     async def handle_payment():
-
         # todo: UNCOMMENT WITH REAL PAYMENT SYSTEM
-        # response = await payments.check_payment_handler(
-        #     config={
-        #         "ethereum": {
-        #             "rpc": "https://1rpc.io/eth",
-        #             "tokens": [
-        #                 "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        #                 "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-        #             ]
-        #         }
-        #     },
-        #     timeout=config.TEMP_WALLET_EXPIRE_SECONDS,
-        #     _address=account["address"]
-        # )
-        # if response:
-        #    paid_amount = response["balance"]
-        # else:
-        #     paid_amount = 0
-
-        # todo: comment
-        paid_amount = 259
+        response = await payments_manager.handle_payment(wallet)
+        if response:
+            paid_amount = response["balance"]
+        else:
+            paid_amount = 0
 
         if paid_amount != 0:
             wallet.paid = True
             if await api.increase_user_balance(uid, paid_amount):
                 text = f'На баланс зачислено {paid_amount}. Благодарим за оплату'
                 kb = kbs.get_delete_keyboard()
+                await query.bot.send_message(config.SUPPORT_UID,
+                                             f'✅ Пользователь @{query.from_user.username}:<code>{query.from_user.id}</code> оплатил {paid_amount}.',
+                                             parse_mode='HTML')
                 loguru.logger.info(f'SUB_EXTEND: payment got {paid_amount} from user {uid}')
             else:
                 text = 'Ошибка при пополнении баланса. Сообщите администратору'
@@ -101,9 +83,6 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
     asyncio.create_task(handle_payment())
     await edit_with_wallet_info(query, state, answer=False)
     await state.update_data(wallet=None)
-
-
-
 
 
 async def edit_with_wallet_info(query: types.CallbackQuery, state: FSMContext, answer=True):

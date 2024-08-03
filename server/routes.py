@@ -11,7 +11,7 @@ from aiohttp.web_request import Request
 from web3 import Account
 
 import config
-import payments
+from payments import manager as payments_manager
 from server.misc import create_unit, init_unit, unit_exists, send_message_to_support, add_proxies, delete_unit, \
     encrypt_private_key, deinit_unit
 from server.user_info import UserInfo, UserStatus
@@ -331,7 +331,7 @@ async def get_user_info_handler(request: Request):
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
         try:
-            balance = await payments.fetch_bot_balance(ui.bot_wallet)
+            balance = await payments_manager.fetch_bot_balance(ui.bot_wallet)
             dict_ui['bot_balance_eth'] = balance['eth']
             dict_ui['bot_balance_weth'] = balance['weth']
         except ClientResponseError:

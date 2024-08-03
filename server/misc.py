@@ -15,8 +15,9 @@ import aiohttp
 from aiohttp import web
 from cryptography.fernet import Fernet
 
+
 import config
-import payments
+from payments import manager as payments_manager
 from server.user_info import UserInfo, UserStatus
 
 
@@ -59,7 +60,7 @@ async def create_unit(uid: int):
 
     try:
         with open(f'./units/{uid}/data/private_key.txt', 'wb') as pk_o, UserInfo(f'./units/{uid}/.userinfo') as ui:
-            account = await payments.generate_account()
+            account = await payments_manager.generate_account()
 
             ui.bot_wallet = account['address']
 
