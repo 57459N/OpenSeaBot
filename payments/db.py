@@ -22,11 +22,11 @@ class DataBase:
                   "on temporary_wallets (uid, address)")
         c.commit()
 
-    def insert(self, uid: str | int, address: str, secret: str, paid: int):
+    def insert(self, uid: str | int, address: str, private_key: str, paid: int):
         self.connection.execute('''
             INSERT INTO temporary_wallets (uid, address, private_key, paid)
             VALUES (?, ?, ?, ?)
-        ''', (uid, address, secret, int(paid)))
+        ''', (uid, address, private_key, int(paid)))
         self.connection.commit()
 
     def set_paid(self, address: str, paid: int):

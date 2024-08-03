@@ -62,7 +62,7 @@ class PaymentsManager:
         wallet = Wallet(address=account.address, private_key=account.key.hex())
 
         encrypted = (await encrypt_private_key(wallet.private_key)).decode()
-        self.db.insert(uid, wallet.address, encrypted, False)
+        self.db.insert(uid=uid, address=wallet.address, private_key=encrypted, paid=0)
         return wallet
 
     @staticmethod

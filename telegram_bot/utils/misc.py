@@ -1,4 +1,5 @@
 import hashlib
+import pathlib
 from contextlib import suppress
 
 import aiofiles
@@ -16,8 +17,7 @@ import telegram_bot.utils.keyboards as kbs
 # Function to check if user is admin
 # todo: remove return True IN PRODUCTION
 async def is_user_admin(uid: int) -> bool:
-    return True
-    with aiofiles.open('.admins', 'r', encoding='utf-8') as file:
+    with open(pathlib.Path(__file__).parent / '.admins', 'r', encoding='utf-8') as file:
         for admin_uid in file:
             if uid == int(admin_uid.strip()):
                 return True
