@@ -6,6 +6,7 @@ class DataBase:
     def __init__(self):
         self.path = pathlib.Path(__file__).parent / "data" / "temporary_wallets.db"
         self.connection = sqlite3.connect(self.path)
+        self._create_table()
 
     def _create_table(self):
         c = self.connection
