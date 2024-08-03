@@ -1,6 +1,5 @@
 import asyncio
 import dataclasses
-import sys
 
 import loguru
 from asyncio import CancelledError
@@ -11,9 +10,8 @@ from aiogram import Router, flags, types
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.formatting import Code
-
-import config
 import payments
+import config
 from telegram_bot.handlers.sub_extend.states import SubExtendStates
 from telegram_bot.utils import api
 import telegram_bot.utils.keyboards as kbs
@@ -46,37 +44,39 @@ async def sub_extend_callback_handler(query: types.CallbackQuery, state: FSMCont
 async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery, state: FSMContext):
     uid = query.from_user.id
     # todo: UNCOMMENT WITH REAL PAYMENT SYSTEM
-    account = await payments.generate_account()
-    wallet = Wallet(address=account['address'],
-                    expires=datetime.now() + timedelta(seconds=config.TEMP_WALLET_EXPIRE_SECONDS))
+    # account = await payments.generate_account()
+    # wallet = Wallet(address=account['address'],
+    #                 expires=datetime.now() + timedelta(seconds=config.TEMP_WALLET_EXPIRE_SECONDS))
     loguru.logger.info(f'SUB_EXTEND: generating wallet for {uid}')
     # todo: change address to address from account
-    # wallet = Wallet(address=('TEST WALLET ACC ADDRESS'))
+    wallet = Wallet(address=('TEST WALLET ACC ADDRESS'))
 
     await state.update_data(wallet=wallet)
     await query.answer()
 
     async def handle_payment():
 
-        # paid_amount = 259
-        # await asyncio.sleep(5)
-
         # todo: UNCOMMENT WITH REAL PAYMENT SYSTEM
-        response = await payments.check_payment_handler(
-            config={
-                "ethereum": {
-                    "rpc": "https://1rpc.io/eth",
-                    "tokens": [
-                        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                        "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-                    ]
-                }
-            },
-            timeout=config.TEMP_WALLET_EXPIRE_SECONDS,
-            _address=account["address"]
-        )
-        if response:
-           paid_amount = response["balance"]
+        # response = await payments.check_payment_handler(
+        #     config={
+        #         "ethereum": {
+        #             "rpc": "https://1rpc.io/eth",
+        #             "tokens": [
+        #                 "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        #                 "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        #             ]
+        #         }
+        #     },
+        #     timeout=config.TEMP_WALLET_EXPIRE_SECONDS,
+        #     _address=account["address"]
+        # )
+        # if response:
+        #    paid_amount = response["balance"]
+        # else:
+        #     paid_amount = 0
+
+        # todo: comment
+        paid_amount = 259
 
         if paid_amount != 0:
             wallet.paid = True
@@ -103,22 +103,7 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
     await state.update_data(wallet=None)
 
 
-@dataclasses.dataclass
-class Wallet:
-    address: str
-    expires: datetime
-    paid: bool
 
-    def __init__(self, address: str, expires: datetime = None, paid: bool = False):
-        self.address = address
-        self.paid = paid
-        if expires is None:
-            self.expires = datetime.now() + timedelta(seconds=config.TEMP_WALLET_EXPIRE_SECONDS)
-        else:
-            self.expires = expires
-
-    def __bool__(self):
-        return not self.paid and self.expires > datetime.now()
 
 
 async def edit_with_wallet_info(query: types.CallbackQuery, state: FSMContext, answer=True):

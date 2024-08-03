@@ -17,8 +17,8 @@ import telegram_bot.utils.keyboards as kbs
 # todo: remove return True IN PRODUCTION
 async def is_user_admin(uid: int) -> bool:
     return True
-    async with aiofiles.open('.admins', 'r', encoding='utf-8') as file:
-        async for admin_uid in file:
+    with aiofiles.open('.admins', 'r', encoding='utf-8') as file:
+        for admin_uid in file:
             if uid == int(admin_uid.strip()):
                 return True
         return False
