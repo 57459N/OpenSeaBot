@@ -10,7 +10,6 @@ from bidder.bidder_client import work_client
 
 
 async def main():
-    await init_all_dbs()
     tasks = [
         asyncio.create_task(collections_update_handler()),
         asyncio.create_task(collections_prices_handler()),
