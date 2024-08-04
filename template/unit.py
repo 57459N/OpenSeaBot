@@ -99,10 +99,6 @@ async def set_settings_post(request: web.Request):
         if parameter := validate_settings(settings):
             return web.Response(status=409, text=f'Неправильно задан параметр {parameter}')
 
-        with open('proxies.txt') as file:
-            proxies = [row.strip() for row in file.readlines()]
-        main_proxies = proxies[:2]
-        proxies = proxies[2:]
         await update_settings_database(
             {
                 "collections_parser": {
@@ -113,12 +109,10 @@ async def set_settings_post(request: web.Request):
                     "offer_difference_percent": settings['offer_difference_percent'],
                 },
                 "profit": settings['profit'],
-                "proxies": {
-                    "main": main_proxies,
-                    "parse_proxies": proxies  # из файла proxies.txt
-                }
             }
         )
+        await set_proxies()
+
     except Exception as e:
         loguru.logger.error(f'UNIT:SET_SETTINGS: {unit_uid} {str(e)}')
         return web.Response(status=500, text=str(e))
@@ -133,13 +127,28 @@ async def start_program(app=None):
     # asyncio.create_task(work_client()),
 
 
+async def set_proxies(app=None):
+    with open('proxies.txt') as file:
+        proxies = [row.strip() for row in file.readlines()]
+    main_proxies = proxies[:2]
+    proxies = proxies[2:]
+    await update_settings_database(
+        {
+            "proxies": {
+                "main": main_proxies,
+                "parse_proxies": proxies  # из файла proxies.txt
+            }
+        }
+    )
+
+
 def main():
     global unit_port
     unit_port = int(sys.argv[1])
 
     app = web.Application()
     app.add_routes(routes)
-    app.on_startup.extend([start_program])
+    app.on_startup.extend([start_program, set_proxies])
     web.run_app(app, port=unit_port)
 
 
