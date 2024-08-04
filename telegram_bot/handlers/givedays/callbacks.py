@@ -126,7 +126,7 @@ async def givedays_amount_callback_handler(query: types.CallbackQuery, state: FS
 
 
 @router.callback_query(lambda query: query.data == 'confirm_yes', GiveDaysStates.confirm)
-async def givedays_confirm_callback_handler(query: types.CallbackQuery, state: FSMContext):
+async def givedays_confirm_yes_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     amount = data['amount']
     usernames = data.get('usernames')
@@ -148,3 +148,10 @@ async def givedays_confirm_callback_handler(query: types.CallbackQuery, state: F
     await state.clear()
     await query.answer()
     await query.message.delete()
+
+
+@router.callback_query(lambda query: query.data == 'confirm_no', GiveDaysStates.confirm)
+async def givedays_confirm_no_callback_handler(query: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await query.message.delete()
+    await query.answer()

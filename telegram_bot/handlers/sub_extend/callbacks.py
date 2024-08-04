@@ -37,7 +37,7 @@ async def sub_extend_callback_handler(query: types.CallbackQuery, state: FSMCont
         with suppress(CancelledError):
             await task
 
-    await (state.update_data(wallet_message_task=asyncio.create_task(edit_with_wallet_info(query, state))))
+    await state.update_data(wallet_message_task=asyncio.create_task(edit_with_wallet_info(query, state)))
 
 
 @router.callback_query(lambda query: query.data == 'sub_extend_generate')

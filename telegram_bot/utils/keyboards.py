@@ -170,9 +170,8 @@ def get_givedays_amount_keyboard():
 
 def get_confirm_keyboard():
     return (InlineKeyboardBuilder()
-            .add(InlineKeyboardButton(text="Yes", callback_data='confirm_yes'))
-            .add(InlineKeyboardButton(text="Nope", callback_data='confirm_no'))
-            .add(InlineKeyboardButton(text="❌ Close", callback_data='delete_message'))
+            .add(InlineKeyboardButton(text="✅Yes", callback_data='confirm_yes'))
+            .add(InlineKeyboardButton(text="❌Nope", callback_data='confirm_no'))
             .adjust(2, 1)
             .as_markup())
 

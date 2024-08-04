@@ -91,6 +91,7 @@ async def broadcast_action_callback_handler(query: types.CallbackQuery, state: F
         f'Доставлено {successful_count}/{len(uids)} ({successful_count / len(uids) * 100:.1f}%) сообщений.')
 
 
+
 async def send(user_id: int | str, bot: Bot, typee: str, text: str, photo: PhotoSize = None,
                reply_markup: types.InlineKeyboardMarkup = None) -> bool:
     try:

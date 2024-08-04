@@ -55,13 +55,6 @@ async def universal_back_callback_handler(query: types.CallbackQuery, state: FSM
     await go_back(query, state)
 
 
-@router.callback_query(lambda query: query.data == 'confirm_no')
-async def cancel_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    await state.clear()
-    await query.message.delete()
-    await query.answer()
-
-
 @router.callback_query(lambda query: query.data == 'delete_message')
 async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
     # await state.clear()

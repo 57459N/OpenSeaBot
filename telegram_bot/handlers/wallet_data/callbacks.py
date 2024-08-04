@@ -1,3 +1,4 @@
+import asyncio
 import sys
 
 import loguru
@@ -14,6 +15,7 @@ from telegram_bot.handlers.wallet_data.states import WalletDataStates
 from telegram_bot.utils import api
 from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
 from encryption.system import decrypt_private_key, encrypt_private_key
+from utils.misc import send_main_menu
 
 router = Router()
 router.callback_query.middleware(BackableMiddleware())
@@ -76,12 +78,19 @@ async def set_wallet_data_callback_handler(query: types.CallbackQuery, state: FS
     status, text = await api.send_wallet_data(uid=query.from_user.id,
                                               data={'private_key': encrypted})
 
+    prev_message = data['prev_message']
     match status:
         case 200:
-            await query.message.answer('✅ <b>Your key has been set.</b>', reply_markup=kbs.get_just_back_button_keyboard())
+            await prev_message.edit_text('✅ <b>Your key has been set.</b>', parse_mode='HTML')
+            await asyncio.sleep(0.2)
+            await send_main_menu(query.from_user.id, query.message.bot)
         case 404:
             await query.answer('😔 <b>Your key has not been set, contact support.</b>', show_alert=True)
 
+    await state.clear()
 
-    prev_message = data['prev_message']
-    await prev_message.delete()
+
+@router.callback_query(lambda query: query.data == 'confirm_no', WalletDataStates.confirmation)
+async def skip_wallet_address_callback_handler(query: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await send_main_menu(query.from_user.id, query.message.bot, query.message)
