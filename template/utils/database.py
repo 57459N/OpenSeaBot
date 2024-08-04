@@ -276,4 +276,3 @@ async def init_all_dbs():
     await initialize_database()
     await initialize_settings_database()
     await initialize_statement_database()
-    await change_work_statement({"work_statement": False})

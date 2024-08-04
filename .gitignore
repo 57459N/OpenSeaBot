@@ -3,3 +3,4 @@
 /venv/
 /test_copy/
 /units/*
+*.pyc

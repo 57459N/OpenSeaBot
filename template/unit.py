@@ -1,5 +1,6 @@
 import os
 import random
+import subprocess
 from contextlib import suppress
 from typing import Awaitable, Any
 
@@ -8,8 +9,7 @@ import asyncio
 import sys
 import loguru
 
-from utils.database import change_work_statement, get_data_from_db, get_settings_data_from_db, update_settings_database, \
-    init_all_dbs
+from utils.database import change_work_statement, get_data_from_db, get_settings_data_from_db, update_settings_database
 from collections_parser.parser import collections_update_handler, collections_prices_handler
 from bidder.bidder_client import work_client
 
@@ -139,7 +139,7 @@ def main():
 
     app = web.Application()
     app.add_routes(routes)
-    app.on_startup.append(start_program)
+    app.on_startup.extend([start_program])
     web.run_app(app, port=unit_port)
 
 

@@ -45,6 +45,8 @@ async def create_unit(uid: int):
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with COPY TEMPLATE while creating unit for user {uid}')
         raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при копировании шаблона')
 
+    # subprocess.run(['python', 'init_dbs.py'], cwd=f'./units/{uid}')
+
     try:
         with open(f'./units/{uid}/data/private_key.txt', 'wb') as pk_o, UserInfo(f'./units/{uid}/.userinfo') as ui:
             account = await payments_manager.generate_account()
@@ -67,7 +69,6 @@ async def create_unit(uid: int):
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with PROXIES while creating unit for user {uid}')
         raise e
 
-    subprocess.run(['python', 'init_dbs.py'], cwd=f'./units/{uid}')
 
 
 def get_free_port() -> int | None:
