@@ -100,7 +100,8 @@ async def set_settings_post(request: web.Request):
 
         with open('proxies.txt') as file:
             proxies = [row.strip() for row in file.readlines()]
-
+        main_proxies = proxies[:2]
+        proxies = proxies[2:]
         await update_settings_database(
             {
                 "collections_parser": {
@@ -112,10 +113,7 @@ async def set_settings_post(request: web.Request):
                 },
                 "profit": settings['profit'],
                 "proxies": {
-                    "main": [
-                        'igp1040518:mDss0nxNfp@77.83.1.144:7951',
-                        'igp1040518:mDss0nxNfp@77.83.1.170:7951'
-                    ],
+                    "main": main_proxies,
                     "parse_proxies": proxies  # из файла proxies.txt
                 }
             }
