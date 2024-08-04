@@ -7,6 +7,7 @@ import numpy as np
 import json
 from collections import defaultdict
 
+import traceback
 PARAMS = {
     'fields[name]': '1',
     'fields[marketStats]': '1',
@@ -70,6 +71,23 @@ PARAMS = {
     'fields[customData]': '1',
     'fields[chainName]': '1',
     'fields[indexingStatus]': '1',
+}
+
+FETCH_FLOOR_PRICE = {
+    'type[]': [
+        'sell',
+        'sale',
+        'bundle_sale',
+        'buy',
+        'sale_batch',
+        'list',
+        'bundle_list',
+        'list_batch',
+        'mint',
+        'deal',
+    ],
+    'limit': '30',
+    'disableExpiredListings': 'true',
 }
 
 
@@ -199,6 +217,8 @@ async def collections_update_handler() -> None:
             await asyncio.sleep(60)
             
         except Exception as error:
+            logger.debug(parse_settings)
+            print(traceback.format_exc())
             logger.error(f'collections_update_handler: {error}')
         
 
@@ -259,12 +279,26 @@ class SalesParser(RequestsClient):
             params=PARAMS
         ))["data"]
 
+        response = (
+            await self.request(
+                "get",
+                "https://api.pro.opensea.io/collections%2F" + slug + "%2Factivity",
+                params=FETCH_FLOOR_PRICE
+            )
+        )["data"]
+
+        market_activity = [x for x in response if x["market"] in ["seaport", "blur"]]
+        floor_price = min(market_activity, key=lambda x: x["ethPrice"] )
+
+
+        logger.debug(f'Floor price for: {slug}: {floor_price / 10**18}')
+
 
         return {
             "address": response["addresses"][0]["address"],
             "fees": response["fees"]["openSea"],
             "week_volume": response["sevenDayVolume"],
-            "floor": response["stats"]["floor_price"],
+            "floor": floor_price / 10**18,
             "owned_delta": response["stats"]["total_supply"] / response["stats"]["num_owners"]
         }
         
@@ -337,4 +371,5 @@ async def collections_prices_handler() -> None:
             await asyncio.sleep(60)
             
         except Exception as error:
+            print(traceback.format_exc())
             logger.error(f'collections_update_handler: {error}')
