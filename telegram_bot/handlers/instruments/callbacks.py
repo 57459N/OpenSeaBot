@@ -28,15 +28,7 @@ get_settings_map = {
 @flags.backable()
 async def instruments_callback_handler(query: types.CallbackQuery):
     text = f'''
-Для ознакомления с командами рекомендуется прочитать гайд про все функции бота
-Если что-то будет не понятно, можете смело писать саппорту <a href="{config.LINK_TO_SUPPORT}">@Помощьник</a>
-
-Основные команды:
-\tФлор листер - Выставляет ваши нфт по флору, перебивая другие листинги
-
-\tБидер - Выставляет биды на коллекции, которые вы добавите в бота
-
-\tСканер - Анализируте подходящие коллекции под флип по разным критериям. Основной критерий: актив и желанный % профита с коллекции
+HERE WILL BE FAQ AND GITBOOK AND LINKS TO OUR RESOURSES
 '''
     await query.message.edit_text(text=text,
                                   parse_mode='HTML',
@@ -47,7 +39,7 @@ async def instruments_callback_handler(query: types.CallbackQuery):
 @router.callback_query(InstrumentCallback.filter(F.act == 'menu'))
 @flags.backable()
 async def instruments_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
-    await query.message.edit_text(text=f'Меню {callback_data.inst}',
+    await query.message.edit_text(text=f'Menu dodelat nado {callback_data.inst}',
                                   reply_markup=kbs.get_instrument_keyboard(callback_data.inst))
     await query.answer()
 
@@ -104,7 +96,7 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
     settings = data['settings']
     prev_settings = data['prev_settings']
     if settings == prev_settings:
-        m = await query.message.answer('Настройки должны отличаться от предыдущих.')
+        m = await query.message.answer('<b>❗️ The settings should be different from the previous settings.</b>')
         await asyncio.sleep(2)
         await query.answer()
         await m.delete()
@@ -119,7 +111,7 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
             await query.message.edit_text(f"{instrument.name}'s settings set successfully")
             await go_back(query, state, new_message=True, delete_old_message=False)
         case 400, 404:
-            await query.message.answer('Произошла внутренняя ошибка. Пожалуйста обратитесь в поддержку')
+            await query.message.answer('<b>🤷‍♂️ An internal error has occurred. Please contact support</b>')
         case 409:
             await query.message.answer(text)
 
@@ -134,17 +126,17 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     status, text = await api.send_unit_command(uid, 'start')
     match status:
         case 200:
-            await query.answer(f'{instrument.name} запущен')
+            await query.answer(f'{instrument.name} launched')
             return
         case 409:
-            text = 'Ваш юнит не проинициализирован. Пожалуйста обратитесь в поддержку'
+            text = 'Your unit is not initialized. Please contact support'
         case 403:
-            text = ('Ввша подписка неактивна. Вы можете оплатить ее в меню "Информация nо подписке"\n'
-                    'Если вы уже оплачивали подписку, обратитесь в поддержку')
+            text = ('<b>Your subscription is inactive. </b>\n\nYou can pay for it in the "Subscription information" menu\n'
+                    'If you have already paid for a subscription, contact support')
         case 503:
-            text = 'К сожалению вам не предоставили прокси. Обратитесь в поддержку для решения данной проблемы'
+            text = 'Unfortunately you have not been provided with a proxy. Please contact support to solve this problem'
         case _:
-            text = 'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.'
+            text = 'Error on the server, try again later. If the problem recurs, contact support.'
 
     await query.message.answer(
         text=text,
@@ -159,10 +151,10 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     status, text = await api.send_unit_command(uid, 'stop')
     match status:
         case 200:
-            await query.answer(f'{instrument.name} остановлен')
+            await query.answer(f'{instrument.name} stopped')
         case 409:
-            await query.answer(f'{instrument.name} не запущен', show_alert=True)
+            await query.answer(f'{instrument.name} unlaunched', show_alert=True)
         case _:
             await query.message.answer(
-                'Ошибка на сервере, попробуйте позже. Если проблема повторяется, обратитесь в поддержку.')
-            await query.answer(f'{instrument.name} не остановлен')
+                'Error on the server, try again later. If the problem recurs, contact support.')
+            await query.answer(f'{instrument.name} unstopped')

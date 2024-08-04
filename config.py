@@ -1,9 +1,9 @@
-BOT_API_TOKEN = ""
+BOT_API_TOKEN = "7267987681:AAH0Aw5u_zsnNUUsdl_Bhb1M_dttyjANPwk"
 
 LINK_TO_WEBSITE = "https://link2website.example"
 LINK_TO_SUBSCRIBE = "https://link2sub.example"
 
-SUPPORT_UID = "536908900"
+SUPPORT_UID = "661081972"
 SUPPORT_USERNAME = "S7459N"
 LINK_TO_SUPPORT = f"https://t.me/{SUPPORT_USERNAME}"
 

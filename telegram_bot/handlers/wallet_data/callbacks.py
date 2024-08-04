@@ -20,7 +20,11 @@ router = Router()
 @router.callback_query(lambda query: query.data == 'wallet_data_menu')
 @flags.backable()
 async def wallet_data_menu_callback_handler(query: types.CallbackQuery):
-    text = 'Меню кошелька, при помощи которого будет вестись торговля NFT'
+    text = '''
+<b>📃 In this section you able to:</b>
+<i>- get your current private key
+- change private key to your own</i>
+'''
     kb = kbs.get_wallet_data_menu_keyboard()
     await query.message.edit_text(text=text, reply_markup=kb)
     await query.answer()
@@ -31,14 +35,16 @@ async def get_wallet_data_callback_handler(query: types.CallbackQuery, state: FS
     key = await api.send_unit_command(query.from_user.id, 'get_private_key')
 
     if isinstance(key, tuple):
-        await query.answer("Ваш юнит не создан, обратитесь в поддержку", show_alert=True)
+        await query.answer("😔 <b>Your unit has not been created, contact support.</b>", show_alert=True)
         return
 
     decrypted = await decrypt_private_key(key, config.BOT_API_TOKEN)
     await query.message.answer(
-        f'В целях {Bold("безопасности").as_html()} рекомендуется {Bold("удалить данное сообщение").as_html()}'
-        f' после копирования ключа.'
-        f'\n\nПриватный ключ кошелька:\n{Code(decrypted).as_html()}'
+        f'''
+<b>For security reasons, we recommended to delete this message after copying the key.</b>
+
+<b>Private key:</b> {Code(decrypted).as_html()}
+'''
         , parse_mode='HTML'
         , reply_markup=kbs.get_delete_keyboard())
     await query.answer()
@@ -49,7 +55,11 @@ async def skip_wallet_address_callback_handler(query: types.CallbackQuery, state
     await state.set_state(WalletDataStates.private_key)
     await state.update_data(prev_message=query.message)
     await query.message.edit_text(
-        'Введите приватный ключ кошелька. Данный ключ будет использоваться для торговли является обязательным.'
+        '''
+<b>Enter the private key of the wallet</b>
+
+💡 <i>This key will be used for bidding on Opensea and Opensea Pro.</i>
+'''
         , reply_markup=kbs.get_delete_keyboard())
     await query.answer()
 
@@ -65,7 +75,7 @@ async def set_wallet_data_callback_handler(query: types.CallbackQuery, state: FS
 
     match status:
         case 404:
-            await query.answer('Ваш юнит не создан, обратитесь в поддержку.', show_alert=True)
+            await query.answer('😔 <b>Your unit has not been created, contact support.</b>', show_alert=True)
 
     prev_message = data['prev_message']
     await prev_message.delete()

@@ -18,7 +18,6 @@ class DataBase:
                   "paid INTEGER not null, "
                   "PRIMARY KEY (uid, address)"
                   ");")
-
         c.execute("create unique index if not exists user_wallet_index "
                   "on temporary_wallets (uid, address)")
         c.commit()
@@ -29,6 +28,7 @@ class DataBase:
             VALUES (?, ?, ?, ?)
         ''', (uid, address, private_key, int(paid)))
         self.connection.commit()
+
 
     def set_paid(self, address: str, paid: int):
         self.connection.execute('''

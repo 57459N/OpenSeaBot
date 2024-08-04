@@ -16,6 +16,7 @@ async def private_key_message_handler(message: types.Message, state: FSMContext)
     await message.delete()
     prev_message = (await state.get_data())['prev_message']
     await prev_message.edit_text(
-        f'Вы уверены, что хотите изменить данные кошелька на следующие?'
-        f'\nСекретный ключ:\n{Code(pk).as_html()}'
+        f'<b>Are you sure you want to change your wallet details to the following?</b>\n\n'
+        f'❗️ <b><i>The last private key will no longer be stored on our servers and may be lost</i></b>'
+        f'\n\nNew private key: {Code(pk).as_html()}'
         , reply_markup=kbs.get_confirm_keyboard())

@@ -21,7 +21,7 @@ class SubActiveMiddleware(BaseMiddleware):
             if await api.is_users_sub_active(uid):
                 return await handler(event, data)
             else:
-                await event.answer('Ваша подписка неактивна', show_alert=True)
+                await event.answer('🤷‍♂️ Your subscription is not active yet', show_alert=True)
                 # await event.bot.send_message(chat_id=uid, text='Ваша подписка неактивна')
 
         else:

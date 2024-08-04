@@ -1,6 +1,6 @@
 import hashlib
-import pathlib
 from contextlib import suppress
+import pathlib
 
 import aiofiles
 import aiogram
@@ -60,7 +60,16 @@ async def go_back(query: types.CallbackQuery, state: FSMContext, new_message=Fal
 
 
 async def send_main_menu(uid: str | int, bot: aiogram.Bot, message: Message = None):
-    text = 'Привет, добро пожаловать в наш проект 0х1530. Это простой бот, позволяющий вам брать NFT через биды и всегда быть быстрее других.'
+    text = '''
+<b>⚙️ 0x1530 Bidder Bot</b>
+ 
+<i>The fastest. Most profitable. The best Opensea bidder bot</i>
+
+_________________________________________
+<b><a href='https://t.me/channel_1530'>💬 Official Channel</a>
+<a href='http://google.com/'>🌍 Website</a></b>
+
+<i>💡 Use the inline menu to use this tool.</i>'''
     if message:
         await message.edit_text(
             text=text,

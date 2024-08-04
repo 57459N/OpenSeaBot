@@ -76,14 +76,14 @@ async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda query: query.data == 'sub_info_reload')
 async def sub_info_callback_handler(query: types.CallbackQuery):
     if sub_info := await api.get_user_subscription_info_by_id(query.from_user.id):
-        status = 'Активна' if sub_info.get('status', 'No info').lower() == 'active' else 'Не активна'
+        status = 'Active' if sub_info.get('status', 'No info').lower() == 'active' else 'Not active'
         days_left = sub_info.get('days_left', 'No info')
         own_balance = sub_info.get('balance', 'No info')
         bot_wallet = sub_info.get('bot_wallet', 'No info')
         bot_balance_eth = sub_info.get('bot_balance_eth', 'No info')
         bot_balance_weth = sub_info.get('bot_balance_weth', 'No info')
     else:
-        status = 'Неактивна'
+        status = 'Not active'
         days_left = '0'
         own_balance = '0'
         bot_wallet = None
@@ -91,23 +91,24 @@ async def sub_info_callback_handler(query: types.CallbackQuery):
         bot_balance_weth = None
 
     text = f'''
-Привет, @{query.from_user.username}!
+<b>📃 In this section you able to:</b>
+<i>- renew your subscription
+- get information about the bot's balance
+- get or change a your bot's private key</i>
 
-С помощью данного меню ты можешь продлить подписку. Нажми на кнопку ниже, чтобы получить адрес для оплаты.
-
-Статус подписки: {status}
-Осталось дней до конца подписки: {days_left}
-Ваш баланс: {own_balance}
+<b>Subscription Status:</b> {status}
+<b>Subscription days left:</b> {days_left}
+<b>Balance:</b> {own_balance}
 '''
 
     if bot_wallet:
         text += f'''
-Баланс бота (eth): {bot_balance_eth}
-Баланс бота (weth): {bot_balance_weth}
-Кошелек бота: {Code(bot_wallet).as_html()}
+<b>Balance ETH:</b> {bot_balance_eth}
+<b>Balance WETH:</b> {bot_balance_weth}
+<b>Work address:</b> {Code(bot_wallet).as_html()}
 '''
     else:
-        text += '\n<b>Ваш аккаунт не создан. Оплатите подписку, чтобы получить доступ к боту</b>'
+        text += "\n<i><b>Now your account has not been created. You don't have a working wallet yet, you need to pay for a subscription to get access to the bot</b></i>"
 
     with suppress(TelegramBadRequest):
         await query.message.edit_text(text=text, reply_markup=kbs.get_sub_info_keyboard(), parse_mode='HTML')
@@ -125,9 +126,10 @@ async def extend_sub_callback_handler(query: types.CallbackQuery):
 @flags.backable()
 async def extend_sub_callback_handler(query: types.CallbackQuery, state: FSMContext):
     text = '''
-    Добро пожаловать в панель управления нашим ботом.
-    
-Здесь вы можете настраивать и запускать все функции данного бота.'''
+<b>🔧 Control Panel</b>
+
+<i>- In the "FAQ" section you can read all the information about running and managing the bot 
+- In the "Opensea bidder" section you can change bot settings, start or stop the current working session</i>'''
 
     await query.message.edit_text(text=text, reply_markup=kbs.get_instruments_keyboard())
     await query.answer()

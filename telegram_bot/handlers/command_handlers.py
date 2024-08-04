@@ -16,4 +16,4 @@ async def command_start_handler(message: types.Message):
     if (is_sub or is_admin) and True:
         await send_main_menu(user_id, message.bot)
     else:
-        await message.answer(text='Вы должны подписаться перед использованием бота', reply_markup=get_no_sub_keyboard())
+        await message.answer(text='<b>Before using our bot, you are required to subscribe to our resources</b>', reply_markup=get_no_sub_keyboard())

@@ -10,9 +10,9 @@ from web3.eth import AsyncEth
 import asyncio
 
 import config
-from encryption.system import encrypt_private_key, decrypt_private_key
-from payments.db import DataBase
-from payments.rpc import RPCRequestManager
+from encryption import encrypt_private_key, decrypt_private_key
+from db import DataBase
+from rpc import RPCRequestManager
 
 abi = [
     {
@@ -62,7 +62,7 @@ class PaymentsManager:
         wallet = Wallet(address=account.address, private_key=account.key.hex())
 
         encrypted = (await encrypt_private_key(wallet.private_key)).decode()
-        self.db.insert(uid=uid, address=wallet.address, private_key=encrypted, paid=0)
+        self.db.insert(uid, wallet.address, encrypted, False)
         return wallet
 
     @staticmethod
