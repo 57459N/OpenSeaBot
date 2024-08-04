@@ -128,7 +128,6 @@ async def set_settings_post(request: web.Request):
 
 async def start_program(app=None):
     # todo: UNCOMMENT ON PRODUCTION
-    await init_all_dbs()
     asyncio.create_task(collections_update_handler()),
     asyncio.create_task(collections_prices_handler()),
     # asyncio.create_task(work_client()),

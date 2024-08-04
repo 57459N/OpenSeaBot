@@ -1,5 +1,7 @@
 import asyncio
 import hashlib
+import subprocess
+
 import loguru
 import os
 import shutil
@@ -64,6 +66,8 @@ async def create_unit(uid: int):
     except IndexError as e:
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with PROXIES while creating unit for user {uid}')
         raise e
+
+    subprocess.run(['python', 'init_dbs.py'], cwd=f'./units/{uid}')
 
 
 def get_free_port() -> int | None:
