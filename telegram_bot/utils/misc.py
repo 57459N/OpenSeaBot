@@ -8,7 +8,7 @@ from aiogram import types
 from aiogram.exceptions import TelegramNetworkError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from aiogram.utils.formatting import as_key_value, as_list, Bold, Text
+from aiogram.utils.formatting import as_key_value, as_list, Bold, Text, Code, Italic
 from cryptography.fernet import Fernet
 
 import telegram_bot.utils.keyboards as kbs
@@ -24,11 +24,25 @@ async def is_user_admin(uid: int) -> bool:
         return False
 
 
-def get_settings_beautiful_list(settings: dict[str, str], active: str = None, header: str = '') -> Text:
+def get_settings_beautiful_list(settings: dict[str, str], prev_settings: dict[str, str] = None, active: str = None,
+                                header: str = '') -> Text:
+    lst = []
+    if prev_settings is None:
+        prev_settings = {}
+
+    for k, v in settings.items():
+        icon = '✅' if k == active else '⚙️'
+        key = Bold(f'{k}:')
+        value = Bold(v)
+        old = Italic('(', as_list(prev_settings.get(k, v), 'old', sep=' '), ')') \
+            if prev_settings.get(k, v) != v else ''
+        line = as_list(icon, key, value, old, sep=' ')
+        lst.append(line)
+
     return as_list(
         Bold(header),
-        *(as_key_value(('✅' if k == active else '') + k, v) for k, v in settings.items()),
-        sep='\n'
+        *lst,
+        sep='\n\n'
     )
 
 

@@ -17,6 +17,7 @@ router = Router()
 async def instrument_settings_message_handler(message: types.Message, state: FSMContext):
     data = await state.get_data()
     settings = data['settings']
+    prev_settings = data['prev_settings']
     parameter = data['parameter']
     settings_message: types.Message = data['message']
     instrument = data['instrument']
@@ -30,6 +31,8 @@ async def instrument_settings_message_handler(message: types.Message, state: FSM
     else:
         is_bad = False
 
+    await message.delete()
+
     if is_bad:
         m = await message.answer(answer, parse_mode='HTML')
         await asyncio.sleep(3)
@@ -37,13 +40,13 @@ async def instrument_settings_message_handler(message: types.Message, state: FSM
         return
 
     settings[parameter] = text
-
     await state.update_data(settings=settings)
 
     answer = get_settings_beautiful_list(
         settings=settings,
+        prev_settings=prev_settings,
         active=parameter,
         header=f'Settings of {instrument.name}:'
     ).as_html()
     kb = (kbs.get_instrument_settings_keyboard(instrument.name, settings.keys()))
-    await settings_message.edit_text(text=answer, reply_markup=kb, parse_mode='HTML', )
+    await settings_message.edit_text(text=answer, reply_markup=kb, parse_mode='HTML')
