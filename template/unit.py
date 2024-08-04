@@ -8,7 +8,8 @@ import asyncio
 import sys
 import loguru
 
-from utils.database import change_work_statement, get_data_from_db, get_settings_data_from_db, update_settings_database
+from utils.database import change_work_statement, get_data_from_db, get_settings_data_from_db, update_settings_database, \
+    init_all_dbs
 from collections_parser.parser import collections_update_handler, collections_prices_handler
 from bidder.bidder_client import work_client
 
@@ -127,6 +128,7 @@ async def set_settings_post(request: web.Request):
 
 async def start_program(app=None):
     # todo: UNCOMMENT ON PRODUCTION
+    await init_all_dbs()
     asyncio.create_task(collections_update_handler()),
     asyncio.create_task(collections_prices_handler()),
     # asyncio.create_task(work_client()),
