@@ -89,7 +89,7 @@ async def check_payment_handler(config: dict, _address: str, timeout: int = 60) 
     config = {
         "arbitrum": {
             "rpc": "",
-            "tokens": []
+            "tokens": []]]]
         },
         "ethereum": {
             "rpc": "",
