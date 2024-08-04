@@ -74,21 +74,18 @@ PARAMS = {
 }
 
 FETCH_FLOOR_PRICE = {
-    'type[]': [
-        'sell',
-        'sale',
-        'bundle_sale',
-        'buy',
-        'sale_batch',
-        'list',
-        'bundle_list',
-        'list_batch',
-        'mint',
-        'deal',
+    'offset': '0',
+    'limit': '100',
+    'filters[supportsWyvern]': 'true',
+    'markets[]': [
+        'seaport',
+        'blur_v2',
+        'blur',
     ],
-    'limit': '30',
-    'disableExpiredListings': 'true',
+    'sort[currentEthPrice]': 'asc',
+    'status[]': 'buy_now',
 }
+
 
 
 
@@ -279,19 +276,16 @@ class SalesParser(RequestsClient):
             params=PARAMS
         ))["data"]
 
-        response = (
+        items_response = (
             await self.request(
                 "get",
-                "https://api.pro.opensea.io/collections%2F" + slug + "%2Factivity",
+                "https://api.pro.opensea.io/collections%2F" + slug + "%2Fassets",
                 params=FETCH_FLOOR_PRICE
             )
         )["data"]
 
-        market_activity = [x for x in response if x["market"] in ["seaport", "blur"]]
-        floor_price = min(market_activity, key=lambda x: x["ethPrice"] )
-
-
-        logger.debug(f'Floor price for: {slug}: {floor_price / 10**18}')
+        floor_price = min(items_response, key=lambda x: x["currentEthPrice"])["currentEthPrice"]
+        #logger.debug(f'Floor price for: {slug}: {floor_price / 10**18}')
 
 
         return {
