@@ -24,9 +24,9 @@ async def instrument_settings_message_handler(message: types.Message, state: FSM
     text = message.text
     is_bad = True
     if settings[parameter] == text:
-        answer = 'Значение должно отличаться от предыдущего.'
+        answer = "New value can't be the same as an old one."
     elif not re.sub(r'[.,]', '', text).isdigit():
-        answer = f'Значение должно быть числом. Например {Code("777").as_html()} или {Code("3.14").as_html()}'
+        answer = f'Value must be a number. For example {Code("777").as_html()} or {Code("3.14").as_html()}'
     else:
         is_bad = False
 
@@ -43,7 +43,7 @@ async def instrument_settings_message_handler(message: types.Message, state: FSM
     answer = get_settings_beautiful_list(
         settings=settings,
         active=parameter,
-        header=f'Настройки {instrument.name}:'
+        header=f'Settings of {instrument.name}:'
     ).as_html()
     kb = (kbs.get_instrument_settings_keyboard(instrument.name, settings.keys()))
     await settings_message.edit_text(text=answer, reply_markup=kb, parse_mode='HTML', )

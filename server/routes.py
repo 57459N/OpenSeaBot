@@ -184,6 +184,8 @@ async def set_settings_handler(request: Request):
 
     active_units = request.app['active_units']
     settings = dict(request.rel_url.query)
+    if 'token' in settings:
+        settings.pop('token')
     async with aiohttp.ClientSession() as session:
         url = f'http://localhost:{active_units[uid].port}/set_settings'
         async with session.post(url, data=settings) as resp:

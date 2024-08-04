@@ -91,7 +91,7 @@ async def get_user_ids(status: str = None) -> list[int] | None:
 
 
 INSTRUMENTS = Instruments(
-    Instrument(name='🐳 Opensea bidder',
+    Instrument(name='🐳 Bidder',
                server_name='unit'),
 )
 

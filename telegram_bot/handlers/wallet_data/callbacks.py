@@ -12,9 +12,11 @@ import config
 import telegram_bot.utils.keyboards as kbs
 from telegram_bot.handlers.wallet_data.states import WalletDataStates
 from telegram_bot.utils import api
+from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
 from encryption.system import decrypt_private_key, encrypt_private_key
 
 router = Router()
+router.callback_query.middleware(BackableMiddleware())
 
 
 @router.callback_query(lambda query: query.data == 'wallet_data_menu')
@@ -51,6 +53,7 @@ async def get_wallet_data_callback_handler(query: types.CallbackQuery, state: FS
 
 
 @router.callback_query(lambda query: query.data == 'wallet_data_set')
+@flags.backable()
 async def skip_wallet_address_callback_handler(query: types.CallbackQuery, state: FSMContext):
     await state.set_state(WalletDataStates.private_key)
     await state.update_data(prev_message=query.message)
@@ -60,7 +63,7 @@ async def skip_wallet_address_callback_handler(query: types.CallbackQuery, state
 
 💡 <i>This key will be used for bidding on Opensea and Opensea Pro.</i>
 '''
-        , reply_markup=kbs.get_delete_keyboard())
+        , reply_markup=kbs.get_just_back_button_keyboard())
     await query.answer()
 
 
@@ -74,8 +77,11 @@ async def set_wallet_data_callback_handler(query: types.CallbackQuery, state: FS
                                               data={'private_key': encrypted})
 
     match status:
+        case 200:
+            await query.message.answer('✅ <b>Your key has been set.</b>', reply_markup=kbs.get_just_back_button_keyboard())
         case 404:
-            await query.answer('😔 <b>Your unit has not been created, contact support.</b>', show_alert=True)
+            await query.answer('😔 <b>Your key has not been set, contact support.</b>', show_alert=True)
+
 
     prev_message = data['prev_message']
     await prev_message.delete()
