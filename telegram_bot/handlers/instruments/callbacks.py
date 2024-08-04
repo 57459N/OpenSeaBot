@@ -128,7 +128,7 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     status, text = await api.send_unit_command(uid, 'start')
     match status:
         case 200:
-            await query.answer(f'{instrument.name} launched')
+            await query.answer(text, show_alert=True)
             return
         case 409:
             text = 'Your unit is not initialized. Please contact support'
@@ -154,9 +154,9 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     status, text = await api.send_unit_command(uid, 'stop')
     match status:
         case 200:
-            await query.answer(f'{instrument.name} stopped')
+            await query.answer(text, show_alert=True)
         case 409:
-            await query.answer(f'{instrument.name} unlaunched', show_alert=True)
+            await query.answer(f'{instrument.name} is not running yet', show_alert=True)
         case _:
             await query.message.answer(
                 'Error on the server, try again later. If the problem recurs, contact support.')

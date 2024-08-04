@@ -24,7 +24,7 @@ async def start_get(request):
     is_running = await get_data_from_db()
     if is_running:
         loguru.logger.warning(f'UNIT:START: unit {unit_uid} is already running')
-        return web.Response(status=409, text=f'Unit {unit_uid} is already running')
+        return web.Response(status=200, text=f'Unit is already running')
 
     if os.path.getsize(f'proxies.txt') == 0:
         loguru.logger.error(f'UNIT:START: proxies.txt is empty')
