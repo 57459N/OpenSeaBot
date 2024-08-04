@@ -59,7 +59,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
                             instrument=instrument, parameter=callback_data.param)
 
     await query.message.edit_text(text=get_settings_beautiful_list(settings=settings,
-                                                                   header=f'Настройки {instrument.name}:'
+                                                                   header=f'Settings of {instrument.name}:'
                                                                    ).as_html(),
                                   parse_mode='HTML',
                                   reply_markup=kbs.get_instrument_settings_keyboard(instrument.name, settings.keys()))
@@ -72,6 +72,7 @@ async def instruments_settings_change_callback_handler(query: types.CallbackQuer
     try:
         data = await state.get_data()
         settings = data['settings']
+        prev_settings = data['prev_settings']
     except KeyError:
         await query.answer()
         await query.message.delete()
@@ -80,8 +81,9 @@ async def instruments_settings_change_callback_handler(query: types.CallbackQuer
     await state.set_state(InstrumentStates.settings_change)
     await state.update_data(parameter=callback_data.param)
     await query.message.edit_text(text=get_settings_beautiful_list(settings=settings,
+                                                                   prev_settings=prev_settings,
                                                                    active=callback_data.param,
-                                                                   header=f'Настройки {callback_data.inst}:'
+                                                                   header=f'Settings of {callback_data.inst}:'
                                                                    ).as_html(),
                                   parse_mode='HTML',
                                   reply_markup=kbs.get_instrument_settings_keyboard(callback_data.inst,
@@ -131,8 +133,9 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
         case 409:
             text = 'Your unit is not initialized. Please contact support'
         case 403:
-            text = ('<b>Your subscription is inactive. </b>\n\nYou can pay for it in the "Subscription information" menu\n'
-                    'If you have already paid for a subscription, contact support')
+            text = (
+                '<b>Your subscription is inactive. </b>\n\nYou can pay for it in the "Subscription information" menu\n'
+                'If you have already paid for a subscription, contact support')
         case 503:
             text = 'Unfortunately you have not been provided with a proxy. Please contact support to solve this problem'
         case _:
