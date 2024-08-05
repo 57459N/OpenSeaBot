@@ -119,7 +119,7 @@ def validate_token(token: str) -> bool:
     return token == config.BOT_API_TOKEN
 
 
-def unit_exists(uid: int) -> bool:
+def unit_exists(uid: int | str) -> bool:
     return os.path.exists(f'./units/{uid}/unit.py')
 
 

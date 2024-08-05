@@ -85,7 +85,7 @@ class PaymentsManager:
                                      "0xdAC17F958D2ee523a2206206994597C13D831ec7"])
 
                 for resp in result:
-                    resp['balance'] = 259  # todo: DELETE IN PRODUCTION
+                    resp['balance'] = 239  # todo: DELETE IN PRODUCTION
                     if resp["balance"] > 0:
                         self.db.set_paid(wallet.address, resp["balance"])
                         loguru.logger.info(

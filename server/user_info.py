@@ -9,6 +9,7 @@ import config
 class UserStatus(str, Enum):
     inactive = 'Inactive'
     active = 'Active'
+    deactivated = 'Deactivated'
     banned = 'Banned'
 
 
@@ -40,13 +41,16 @@ class UserInfo:
 
     def increase_balance_and_activate(self, amount: float):
         self.balance += amount
-        if self.status == UserStatus.inactive and self.balance >= config.SUB_COST:
-            self.balance -= config.SUB_COST
+        # user already paid once, and we let hшm activate sub for a day
+        # or user didn't pay monthly sub yet
+        if (self.status == UserStatus.deactivated and self.balance >= config.SUB_COST_DAY) or \
+                (self.status == UserStatus.inactive and self.balance >= config.SUB_COST_MONTH):
+            self.balance -= config.SUB_COST_DAY
             self.status = UserStatus.active
 
     def decrease_balance_or_deactivate(self, amount: float) -> bool:
-        if self.balance < config.SUB_COST:
-            self.status = UserStatus.inactive
+        if self.balance < amount:
+            self.status = UserStatus.deactivated
             return False
         else:
             self.balance -= amount

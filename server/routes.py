@@ -288,7 +288,7 @@ async def increase_user_balance_handler(request: Request):
             await send_message_to_support(f'User {Code(uid).as_html()}: {e}')
 
     with UserInfo(info_path) as ui:
-        ui.increase_balance_and_activate(amount)
+        ui.increase_balance_and_activate(amount=amount)
 
     loguru.logger.info(f'SERVER:INCREASE_USER_BALANCE: balance increased by {amount} to user {uid}')
 
@@ -311,7 +311,7 @@ async def give_days_handler(request: Request):
 
     if os.path.exists(f'./units/{uid}/.userinfo'):
         with UserInfo(f'./units/{uid}/.userinfo') as ui:
-            ui.increase_balance_and_activate(config.SUB_COST_DAY * int(amount))
+            ui.increase_balance_and_activate(amount=config.SUB_COST_DAY * int(amount))
             loguru.logger.info(f'SERVER:GIVE_DAYS: {amount} days given to user {uid}')
             return web.Response(status=200, text='OK')
     else:
@@ -326,12 +326,17 @@ async def get_user_info_handler(request: Request):
         return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /user/1/get_info')
 
     if not unit_exists(uid):
-        loguru.logger.warning(f'SERVER:GET_USER_INFO: user {uid} not found')
-        return web.Response(status=404, text=f'User {uid} not found')
+        return web.json_response({'activation_cost': config.SUB_COST_MONTH})
 
     with UserInfo(f'./units/{uid}/.userinfo') as ui:
         dict_ui = asdict(ui)
-        dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST
+        dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST_DAY
+
+        if ui.status == UserStatus.deactivated:
+            dict_ui['activation_cost'] = config.SUB_COST_DAY
+        elif ui.status == UserStatus.inactive:
+            dict_ui['activation_cost'] = config.SUB_COST_MONTH
+
         try:
             balance = await payments_manager.fetch_bot_balance(ui.bot_wallet)
             dict_ui['bot_balance_eth'] = balance['eth']

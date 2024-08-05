@@ -69,26 +69,23 @@ async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
 @router.callback_query(lambda query: query.data == 'sub_info_reload')
 async def sub_info_callback_handler(query: types.CallbackQuery):
     if sub_info := await api.get_user_subscription_info_by_id(query.from_user.id):
-        status = 'Active' if sub_info.get('status', 'No info').lower() == 'active' else 'Not active'
-        days_left = sub_info.get('days_left', 'No info')
-        own_balance = sub_info.get('balance', 'No info')
-        bot_wallet = sub_info.get('bot_wallet', 'No info')
-        bot_balance_eth = sub_info.get('bot_balance_eth', 'No info')
-        bot_balance_weth = sub_info.get('bot_balance_weth', 'No info')
-    else:
-        status = 'Not active'
-        days_left = '0'
-        own_balance = '0'
-        bot_wallet = None
-        bot_balance_eth = None
-        bot_balance_weth = None
+        status = sub_info.get('status', 'Inactive')
+        days_left = sub_info.get('days_left', 0)
+        own_balance = sub_info.get('balance', 0)
+        bot_wallet = sub_info.get('bot_wallet', None)
+        bot_balance_eth = sub_info.get('bot_balance_eth', None)
+        bot_balance_weth = sub_info.get('bot_balance_weth', None)
 
     text = f'''
 <b>📃 In this section you able to:</b>
-<i>- renew your subscription
+<blockquote><i>- renew your subscription
 - get information about the bot's balance
-- get or change a your bot's private key</i>
+- get or change a your bot's private key</i></blockquote>
+'''
+    if (act_cost := sub_info.get('activation_cost', None)) and status in {'Inactive', 'Deactivated', 'Not active'}:
+        text += f"\n<b>To activate your subscription, your balance must be at least {act_cost}</b>\n"
 
+    text += f'''
 <b>Subscription Status:</b> {status}
 <b>Subscription days left:</b> {days_left}
 <b>Balance:</b> {own_balance}

@@ -20,8 +20,6 @@ async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
                 f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info?token={config.BOT_API_TOKEN}') as resp:
             if resp.status == 200 and 'json' in resp.content_type:
                 return await resp.json()
-            elif resp.status == 404:
-                return {}
 
 
 async def is_user_subscribed(uid: int) -> bool:
