@@ -91,7 +91,7 @@ def get_sub_info_keyboard():
 def get_sub_extend_generate_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="🪄 Create wallet", callback_data='sub_extend_generate'))
-            .add(InlineKeyboardButton(text="❌ Close payment", callback_data='delete_message'))
+            .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
 

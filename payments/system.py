@@ -85,6 +85,7 @@ class PaymentsManager:
                                      "0xdAC17F958D2ee523a2206206994597C13D831ec7"])
 
                 for resp in result:
+                    await asyncio.sleep(30)
                     resp['balance'] = 239  # todo: DELETE IN PRODUCTION
                     if resp["balance"] > 0:
                         self.db.set_paid(wallet.address, resp["balance"])
