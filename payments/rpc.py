@@ -24,9 +24,7 @@ abi = [
 
 
 class RPCRequestManager:
-    rpc_list = ['https://ethereum-rpc.publicnode.com', 'https://rpc.mevblocker.io', 'wss://eth.drpc.org']
-
-    def __init__(self):
+    def __init__(self, rpc_list: list[str]):
         self.w3_list = [Web3(
             Web3.AsyncHTTPProvider(
                 url,
@@ -34,7 +32,7 @@ class RPCRequestManager:
             ),
             modules={"eth": (AsyncEth,)},
             middlewares=[]
-        ) for url in RPCRequestManager.rpc_list]
+        ) for url in rpc_list]
 
     async def get_first(self, func: callable, *args, **kwargs):
         tasks = [asyncio.create_task(func(w3, *args, **kwargs)) for w3 in self.w3_list]
@@ -42,7 +40,8 @@ class RPCRequestManager:
 
         for task in unfinished:
             task.cancel()
-        await asyncio.wait(unfinished)
+        if unfinished:
+            await asyncio.wait(unfinished)
 
         for x in finished:
             return x.result()

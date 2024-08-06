@@ -54,15 +54,20 @@ class Wallet:
 
 class PaymentsManager:
     def __init__(self):
-        self.db = DataBase()
-        self.rpcs = RPCRequestManager()
+        self._db = DataBase()
+
+        self._nets = {
+            net: {
+                'w3': RPCRequestManager(net_config['rpcs']),
+                'tokens': net_config['tokens']
+            } for net, net_config in config.RPC_CONFIG.items()}
 
     async def get_temporary_wallet(self, uid: str | int):
         account = Account.create()
         wallet = Wallet(address=account.address, private_key=account.key.hex())
 
         encrypted = (await encrypt_private_key(wallet.private_key)).decode()
-        self.db.insert(uid=uid, address=wallet.address, private_key=encrypted, paid=0)
+        self._db.insert(uid=uid, address=wallet.address, private_key=encrypted, paid=0)
         return wallet
 
     @staticmethod
@@ -79,18 +84,16 @@ class PaymentsManager:
 
         while wallet:
             try:
-                result = await self.fetch_balance(
-                    address=address,
-                    token_addresses=["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                                     "0xdAC17F958D2ee523a2206206994597C13D831ec7"])
+                results = await asyncio.gather(*(self.fetch_balance(address=address, net=net) for net in self._nets.keys()))
 
-                for resp in result:
-                    resp['balance'] = 239  # todo: DELETE IN PRODUCTION
-                    if resp["balance"] > 0:
-                        self.db.set_paid(wallet.address, resp["balance"])
-                        loguru.logger.info(
-                            f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
-                        return resp
+                for result in results:
+                    for resp in result:
+                        resp['balance'] = 239  # todo: DELETE IN PRODUCTION
+                        if resp["balance"] > 0:
+                            self._db.set_paid(wallet.address, resp["balance"])
+                            loguru.logger.info(
+                                f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
+                            return resp
 
                 await asyncio.sleep(10)
             except Exception as _err:
@@ -99,11 +102,16 @@ class PaymentsManager:
 
         loguru.logger.info(f'Nothin was found at address: {address}')
 
-    async def fetch_balance(self, address: str, token_addresses: list[str]):
-        return await self.rpcs.get_first(self._fetch_balance, address=address, token_addresses=token_addresses)
+    async def fetch_balance(self, address: str, net: str):
+        if net not in self._nets.keys():
+            raise KeyError(f'Net {net} is not presented in RPC_CONFIG')
+        else:
+            rpc_manager = self._nets[net]['w3']
+            tokens = self._nets[net]['tokens']
+        return await rpc_manager.get_first(self._fetch_balance, address=address, token_addresses=tokens)
 
     async def fetch_bot_balance(self, address: str):
-        return await self.rpcs.get_first(self._fetch_bot_balance, _address=address)
+        return await self._nets['ethereum']['w3'].get_first(self._fetch_bot_balance, _address=address)
 
     @staticmethod
     async def _fetch_balance(w3: Web3, address: str, token_addresses: list) -> list[dict[str, int]]:
