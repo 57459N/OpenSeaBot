@@ -34,7 +34,7 @@ async def _get_proxies(filepath: str, amount: int) -> list[str]:
     return list(map(lambda x: x.strip(), lines[:amount]))
 
 
-async def create_unit(uid: int):
+async def create_unit(uid: int | str):
     if os.path.exists(f'./units/{uid}'):
         loguru.logger.error(f'SERVER:CREATE_UNIT: Unit {uid} already exists')
         raise Exception(f'Юнит {uid} уже существует')
@@ -45,14 +45,12 @@ async def create_unit(uid: int):
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with COPY TEMPLATE while creating unit for user {uid}')
         raise Exception(f'Не удалось создать юнит пользователя {uid}. Ошибка при копировании шаблона')
 
-    # subprocess.run(['python', 'init_dbs.py'], cwd=f'./units/{uid}')
-
     try:
         with open(f'./units/{uid}/data/private_key.txt', 'wb') as pk_o, UserInfo(f'./units/{uid}/.userinfo') as ui:
+            ui.uid = int(uid)
+
             account = await payments_manager.generate_account()
-
             ui.bot_wallet = account['address']
-
             private_key = account['secret']
             # make sure password here match with password in template
             encrypted = await encrypt_private_key(private_key)
@@ -68,7 +66,6 @@ async def create_unit(uid: int):
     except IndexError as e:
         loguru.logger.error(f'SERVER:CREATE_UNIT: Error with PROXIES while creating unit for user {uid}')
         raise e
-
 
 
 def get_free_port() -> int | None:

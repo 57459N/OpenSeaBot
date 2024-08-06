@@ -17,6 +17,7 @@ class UserStatus(str, Enum):
 class UserInfo:
     path: InitVar[str] = None
 
+    uid: int = -1
     status: str = UserStatus.inactive.value
     balance: float = 0.0
     bot_wallet: str = ""

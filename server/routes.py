@@ -277,17 +277,16 @@ async def increase_user_balance_handler(request: Request):
                             text='`uid` must be an integer\n`amount` must be a number. 777 or 3.14'
                                  ' For example: /user/1/increase_balance?amount=10')
 
-    info_path = f'./units/{uid}/.userinfo'
     # User's unit is not created yet
     if not unit_exists(uid):
         try:
             await create_unit(uid)
             request.app['active_units'][uid] = init_unit(uid)
         except Exception as e:
-            loguru.logger.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not created\n{e}')
+            loguru.logger.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not fully created\n{e}')
             await send_message_to_support(f'User {Code(uid).as_html()}: {e}')
 
-    with UserInfo(info_path) as ui:
+    with UserInfo(f'./units/{uid}/.userinfo') as ui:
         ui.increase_balance_and_activate(amount=amount)
 
     loguru.logger.info(f'SERVER:INCREASE_USER_BALANCE: balance increased by {amount} to user {uid}')
