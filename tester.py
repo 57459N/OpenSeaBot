@@ -51,4 +51,5 @@ response = session.get(
 )
 import json
 print(json.dumps(response.headers, indent=2))
+
 print(response.status_code)
