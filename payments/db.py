@@ -15,27 +15,27 @@ class DataBase:
                   "uid INTEGER, "
                   "address TEXT not null, "
                   "private_key TEXT not null, "
-                  "paid INTEGER not null, "
+                  "chain_id INTEGER not null default -1, "
+                  "paid INTEGER not null default 0, "
                   "PRIMARY KEY (uid, address)"
                   ");")
         c.execute("create unique index if not exists user_wallet_index "
                   "on temporary_wallets (uid, address)")
         c.commit()
 
-    def insert(self, uid: str | int, address: str, private_key: str, paid: int):
+    def insert(self, uid: str | int, address: str, private_key: str, chain_id: int = -1, paid: int = 0):
         self.connection.execute('''
-            INSERT INTO temporary_wallets (uid, address, private_key, paid)
-            VALUES (?, ?, ?, ?)
-        ''', (uid, address, private_key, int(paid)))
+            INSERT INTO temporary_wallets (uid, address, private_key, chain_id, paid)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (uid, address, private_key, chain_id, paid))
         self.connection.commit()
 
-
-    def set_paid(self, address: str, paid: int):
+    def set_paid(self, address: str, chain_id: int, paid: int):
         self.connection.execute('''
             UPDATE temporary_wallets
-            SET paid = ?
+            SET chain_id = ?, paid = ?  
             WHERE address = ?
-        ''', (int(paid), address))
+        ''', (chain_id, paid, address))
         self.connection.commit()
 
     def __del__(self):

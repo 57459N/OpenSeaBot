@@ -67,7 +67,7 @@ class PaymentsManager:
         wallet = Wallet(address=account.address, private_key=account.key.hex())
 
         encrypted = (await encrypt_private_key(wallet.private_key)).decode()
-        self._db.insert(uid=uid, address=wallet.address, private_key=encrypted, paid=0)
+        self._db.insert(uid=uid, address=wallet.address, private_key=encrypted)
         return wallet
 
     @staticmethod
@@ -90,7 +90,7 @@ class PaymentsManager:
                     for resp in result:
                         resp['balance'] = 239  # todo: DELETE IN PRODUCTION
                         if resp["balance"] > 0:
-                            self._db.set_paid(wallet.address, resp["balance"])
+                            self._db.set_paid(wallet.address, chain_id=resp["chain_id"], paid=resp["balance"])
                             loguru.logger.info(
                                 f'Found balance for: {address} in chain with number {resp["chain_id"]} | balance: {resp["balance"]}')
                             return resp
