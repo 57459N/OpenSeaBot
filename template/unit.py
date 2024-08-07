@@ -53,8 +53,8 @@ async def stop_get(request):
     loguru.logger.info('STOP')
     is_running = await get_data_from_db()
     if not is_running:
-        loguru.logger.warning(f'UNIT:STOP: unit {unit_uid} is not running')
-        return web.Response(status=409, text=f'Unit {unit_uid} is not running')
+        loguru.logger.warning(f'UNIT:STOP: unit {unit_uid} is already stopped')
+        return web.Response(status=409, text=f'Unit {unit_uid} is already stopped')
     else:
         await change_work_statement({"work_statement": False})  # True - софт пашет | False - останавливается
 
