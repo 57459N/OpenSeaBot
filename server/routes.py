@@ -363,8 +363,9 @@ async def add_idle_proxies_handler(request: Request):
         loguru.logger.warning(f'SERVER:ADD_IDLE_PROXIES: bad request')
         return web.Response(status=400, text='`proxies` must be a list of strings in json format')
 
-    await add_proxies('./.idle_proxies', proxies)
-    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies added')
+    overwrite = request.rel_url.query.get('overwrite', 'False') == 'True'
+    await add_proxies('./.idle_proxies', proxies=proxies, overwrite=overwrite)
+    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies {"overwritten" if overwrite else "added"}')
     return web.Response()
 
 
@@ -386,7 +387,8 @@ async def add_unit_proxies_handler(request: Request):
         loguru.logger.warning(f'SERVER:ADD_UNIT_PROXIES: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
-    await add_proxies(f'./units/{uid}/proxies.txt', proxies)
+    overwrite = request.rel_url.query.get('overwrite', 'False') == 'True'
+    await add_proxies(f'./units/{uid}/proxies.txt', proxies=proxies, overwrite=overwrite)
     loguru.logger.info(f'SERVER:ADD_UNIT_PROXIES: {len(proxies)} proxies added to user {uid}')
     return web.Response()
 
