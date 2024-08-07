@@ -84,7 +84,8 @@ class PaymentsManager:
 
         while wallet:
             try:
-                results = await asyncio.gather(*(self.fetch_balance(address=address, net=net) for net in self._nets.keys()))
+                results = await asyncio.gather(
+                    *(self.fetch_balance(address=address, net=net) for net in self._nets.keys()))
 
                 for result in results:
                     for resp in result:
@@ -111,11 +112,12 @@ class PaymentsManager:
         return await rpc_manager.get_first(self._fetch_balance, address=address, token_addresses=tokens)
 
     async def fetch_bot_balance(self, address: str):
-        return await self._nets['ethereum']['w3'].get_first(self._fetch_bot_balance, _address=address)
+        return await self._nets['ethereum']['w3'].get_first(self._fetch_bot_balance, address=address)
 
     @staticmethod
     async def _fetch_balance(w3: Web3, address: str, token_addresses: list) -> list[dict[str, int]]:
         results = []
+
         for token in token_addresses:
             try:
                 contract = w3.eth.contract(Web3.to_checksum_address(token), abi=abi)
@@ -141,8 +143,12 @@ class PaymentsManager:
         return results
 
     @staticmethod
-    async def _fetch_bot_balance(w3: Web3, _address: str) -> dict:
-        address = Web3.to_checksum_address(_address)
+    async def _fetch_bot_balance(w3: Web3, address: str) -> dict:
+        if address == '':
+            raise ValueError(f'Address `{address}` is empty.')
+
+        address = Web3.to_checksum_address(address)
+
         weth_balance = await PaymentsManager._fetch_balance(
             w3, address, ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"]
         )

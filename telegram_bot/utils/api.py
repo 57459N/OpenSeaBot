@@ -20,6 +20,7 @@ async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
                 f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info?token={config.BOT_API_TOKEN}') as resp:
             if resp.status == 200 and 'json' in resp.content_type:
                 return await resp.json()
+            else: return {}
 
 
 async def is_user_subscribed(uid: int) -> bool:
@@ -112,7 +113,7 @@ async def increase_user_balance(uid, paid_amount):
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/increase_balance?amount={paid_amount}&token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'INCREASE_USER_BALANCE: requesting increase balance for user {uid}')
         async with session.get(url) as resp:
-            return 200 <= resp.status < 300
+            return resp.status, await resp.text()
 
 
 async def add_proxies(proxies: list[str], uid: int | str | None) -> tuple[int, str]:
