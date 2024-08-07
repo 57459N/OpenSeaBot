@@ -116,16 +116,16 @@ async def increase_user_balance(uid, paid_amount):
             return resp.status, await resp.text()
 
 
-async def add_proxies(proxies: list[str], uid: int | str | None) -> tuple[int, str]:
+async def add_proxies(proxies: list[str], uid: int | str | None, overwrite: bool = False) -> tuple[int, str]:
     """
     if uid is None, proxies will be added to idle list\n
     else to specified unit
     """
     async with aiohttp.ClientSession() as session:
         if uid is None:
-            url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies?token={config.BOT_API_TOKEN}'
+            url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies?overwrite={overwrite}&token={config.BOT_API_TOKEN}'
         else:
-            url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/add_proxies?token={config.BOT_API_TOKEN}'
+            url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/add_proxies?overwrite={overwrite}&token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'ADD_PROXIES: adding {len(proxies)} proxies')
         async with session.post(url, json=proxies) as resp:
             return resp.status, await resp.text()
