@@ -160,7 +160,7 @@ async def send_message_to_support(message: str):
     text = f'❗OpenSea Bot Error Message❗\n\n{message}'
     async with aiohttp.ClientSession(trust_env=True) as session:
         resp = await session.post(url=f'http://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
-                                  data={'chat_id': config.SUPPORT_UID, 'text': text, 'parse_mode': 'HTML'})
+                                  data={'chat_id': config.SUPPORT_UID, 'text': text, 'parse_mode': 'HTML'}, ssl=False)
 
 
 async def add_proxies(filepath: str, proxies: list[str]):

@@ -18,7 +18,7 @@ class TelegramLogger:
 
             async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.post(
-                    f"http://api.telegram.org/bot{self.bot_token}/sendMessage", data=self.data
+                    f"http://api.telegram.org/bot{self.bot_token}/sendMessage", data=self.data, ssl=False
                 ) as response:
                     if response.status == 200:
                         loguru.logger.success(f'Message was sent to: {self.data["chat_id"]}')
