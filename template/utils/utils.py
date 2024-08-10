@@ -25,12 +25,16 @@ async def read_json_file(file_path: str) -> dict:
         json_data = json.loads(data)
         return json_data
 
+async def get_user_id() -> int:
+    user_data = await read_json_file(UNIT_DATA)
+    return user_data["uid"]
 
 async def load_data() -> dict:
     return {
         "private_key": await decrypt_secret_key(PRIVATE_KEY_PATH, "8F9eDf6b37Db00Bcc85A31FeD8768303ac4b7400"),
         "settings": await get_settings_data_from_db(),
-        "statement": await get_data_from_db()
+        "statement": await get_data_from_db(),
+        "user_id": await get_user_id()
     }
 
 

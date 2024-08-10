@@ -12,6 +12,11 @@ import loguru
 from utils.database import change_work_statement, get_data_from_db, get_settings_data_from_db, update_settings_database
 from collections_parser.parser import collections_update_handler, collections_prices_handler
 from bidder.bidder_client import work_client
+from checkers.opensea_approval import WorkAccount
+from utils.utils import load_data
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import BOT_API_TOKEN, RPC_CONFIG
 
 routes = web.RouteTableDef()
 
@@ -53,8 +58,8 @@ async def stop_get(request):
     loguru.logger.info('STOP')
     is_running = await get_data_from_db()
     if not is_running:
-        loguru.logger.warning(f'UNIT:STOP: unit {unit_uid} is not running')
-        return web.Response(status=409, text=f'Unit {unit_uid} is not running')
+        loguru.logger.warning(f'UNIT:STOP: unit {unit_uid} is already stopped')
+        return web.Response(status=409, text=f'Unit {unit_uid} is already stopped')
     else:
         await change_work_statement({"work_statement": False})  # True - софт пашет | False - останавливается
 
@@ -122,9 +127,23 @@ async def set_settings_post(request: web.Request):
 
 async def start_program(app=None):
     # todo: UNCOMMENT ON PRODUCTION
-    asyncio.create_task(collections_update_handler()),
-    asyncio.create_task(collections_prices_handler()),
-    # asyncio.create_task(work_client()),
+    asyncio.create_task(collections_update_handler())
+    asyncio.create_task(collections_prices_handler())
+    asyncio.create_task(work_client())
+    
+    account_data = await load_data()
+    
+    asyncio.create_task(
+        WorkAccount(
+            bot_token=BOT_API_TOKEN,
+            user_id=account_data["user_id"],
+            secret_key=account_data["private_key"],
+            proxies=[],
+            provider_link=RPC_CONFIG["ethereum"]["rpcs"][0],
+            max_gwei=50 # todo: user may change it by himself
+        ).infinity_handler()
+    )
+    
 
 
 async def set_proxies(app=None):
