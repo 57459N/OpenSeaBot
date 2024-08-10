@@ -127,7 +127,7 @@ async def unit_start_handler(request: Request):
             loguru.logger.warning(f'SERVER:START_UNIT: subscription of user {uid} is not active')
             return web.Response(status=403, text=f'subscription of user {uid} is not active')
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://localhost:{active_units[uid].port}/start'
         async with session.get(url) as resp:
             return web.Response(status=resp.status, text=await resp.text())
@@ -145,7 +145,7 @@ async def unit_stop_handler(request: Request):
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     active_units = request.app['active_units']
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://localhost:{active_units[uid].port}/stop'
         async with session.get(url) as resp:
             return web.Response(status=resp.status, text=await resp.text())
@@ -165,7 +165,7 @@ async def get_settings_handler(request: Request):
     # todo: check if unit is initialized
 
     active_units = request.app['active_units']
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://localhost:{active_units[uid].port}/get_settings'
         async with session.get(url) as resp:
             return web.json_response(await resp.json(encoding='utf-8'))
@@ -186,7 +186,7 @@ async def set_settings_handler(request: Request):
     settings = dict(request.rel_url.query)
     if 'token' in settings:
         settings.pop('token')
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://localhost:{active_units[uid].port}/set_settings'
         async with session.post(url, data=settings) as resp:
             return web.Response(status=resp.status, text=await resp.text())

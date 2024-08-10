@@ -16,7 +16,7 @@ class TelegramLogger:
         try:
             self.data["text"] = message_text
 
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.post(
                     f"https://api.telegram.org/bot{self.bot_token}/sendMessage", data=self.data
                 ) as response:

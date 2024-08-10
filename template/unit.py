@@ -15,7 +15,8 @@ from bidder.bidder_client import work_client
 from checkers.opensea_approval import WorkAccount
 from utils.utils import load_data
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pathlib
+sys.path.append(str(pathlib.Path(__file__).parent.parent.parent))
 from config import BOT_API_TOKEN, RPC_CONFIG
 
 routes = web.RouteTableDef()
