@@ -132,12 +132,15 @@ def get_to_who_add_proxies_keyboard():
             .as_markup())
 
 
-def get_adding_proxies_keyboard():
+def get_adding_proxies_keyboard(overwrite: bool = False):
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="✅ Finish", callback_data='add_proxies_finish'))
+            .add(InlineKeyboardButton(text=f"{'🟢' if overwrite else '🔴'} Перезаписать серверные прокси",
+                                      callback_data='add_proxies_overwrite_servers'))
             .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
+
 
 
 def get_givedays_type_keyboard():
