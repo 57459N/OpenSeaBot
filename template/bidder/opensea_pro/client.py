@@ -123,7 +123,51 @@ class OpenseaProAccount(RequestsClient):
             "floor_price": database_data["price"]
         }
     
-    async def get_account_portfolio(self, resp: dict = {}) -> dict:
+    async def get_account_assets(self) -> dict:
+        response = await self.send_request(
+            ReadyRequest(
+                url=f"{OPENSEA_PRO_URL}opensea%2Faccount%2F{self.address}%2Fassets",
+                method="get",
+                params={
+                    'limit': '100',
+                    'collectionSlugs': '',
+                    'excludePrivateOwnerships': 'true',
+                    'excludeDelistedAssets': 'true',
+                    'chainName': 'ethereum',
+                }
+            )
+        )
+            
+        return response
+    
+    async def seaport_selling(
+            self, sell_data: dict
+    ) -> dict:
+        
+        """
+            sell_data: 
+                {
+                    "identifierOrCriteria": [1, 2, 33 ...],
+                    "price": 995000000000000000,
+                    "token_address": "0x062e691c2054de82f28008a8ccc6d7a1c8ce060d"
+                }
+            
+            """
+        
+        offer_data = await build_selling_data(self.address, sell_data)
+        signature = await self.sign_message(offer_data, _type="TYPED_DATA_V4")
+        json_data = await get_seaport_selling_data_json(offer_data, signature)
+
+        response = await self.send_request(
+            ReadyRequest(
+                url=f"{OPENSEA_PRO_URL}opensea%2Flisting",
+                method="post",
+                json=json_data
+            )
+        )
+        return response
+    
+    async def get_account_portfolio(self, resp: dict = {}, simple_resp: bool = False) -> dict:
         response = await self.send_request(
             ReadyRequest(
                 url=f"{OPENSEA_PRO_URL}account%2F{self.address}%2Fcollections",
@@ -137,6 +181,8 @@ class OpenseaProAccount(RequestsClient):
                 }
             )
         )
+        if simple_resp: return response
+        
         for item in response["data"]["collections"]:
             resp.update({item["slug"]:item["numItemsOwned"]})
             

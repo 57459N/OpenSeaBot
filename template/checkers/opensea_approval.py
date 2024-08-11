@@ -10,32 +10,11 @@ from loguru import logger
 
 from utils.telegram import TelegramLogger
 from utils.database import get_data_from_db
+from utils.web_utils import gas_price_checker
 
 WETH_CONTRACT = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 OPENSEA_CONTRACT = "0x1E0049783F008A0085193E00003D00cd54003c71"
 APPROVE_AMOUNT = 2**256 - 1
-
-
-async def check_gas_price(provider: Web3) -> int:
-    try:
-        current_gas = await provider.eth.gas_price
-        return current_gas
-
-    except Exception as _err:
-        logger.exception(_err)
-        return Web3.to_wei(999, "gwei")
-
-
-def gas_price_checker(func):
-    async def wrapper(self, *args, **kwargs):
-        while True:
-            current_gas_price = await check_gas_price(self.w3)
-            if current_gas_price <= self.max_gas_price:
-                return await func(self, *args, **kwargs)
-            else:
-                print(f"Текущая цена газа {current_gas_price} выше допустимой {self.max_gas_price}, ждем 20 секунд...")
-                await asyncio.sleep(20)
-    return wrapper
 
 
 class WorkAccount(TelegramLogger):
