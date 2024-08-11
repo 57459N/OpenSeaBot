@@ -292,7 +292,7 @@ async def generate_selling_data(
                 }
             ],
             "startTime": int(time()),
-            "endTime": int(time() + 60*60*24*15),
+            "endTime": int(time() + 60*31),
             "orderType": 0,
             "zone": "0x004c00500000ad104d7dbd00e3ae0a5c00560c00",
             "zoneHash": bytes.fromhex("0000000000000000000000000000000000000000000000000000000000000000"),
