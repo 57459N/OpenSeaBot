@@ -68,15 +68,10 @@ async def create_unit(uid: int | str):
         raise e
 
 
-def get_free_port() -> int | None:
-    for port in range(1024, 65536):
-        try:
-            s = socket(AF_INET, SOCK_STREAM)
-            s.bind(('localhost', port))
-            s.close()
-            return port
-        except OSError:
-            pass
+def get_free_port() -> int:
+    with socket(AF_INET, SOCK_STREAM) as s:
+        s.bind(('localhost', 0))
+        return s.getsockname()[1]
 
 
 @dataclass
