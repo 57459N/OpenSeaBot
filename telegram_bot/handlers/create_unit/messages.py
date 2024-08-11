@@ -30,14 +30,13 @@ async def create_unit_message_handler(message: types.Message, state: FSMContext)
         return
 
     prev_message = (await state.get_data())['prev_message']
-    status, text = await api.send_unit_command(message.text, 'create')
+    status, text = await api.send_instrument_command(message.text, 'unit', 'create')
 
     match status:
         case 201:
             await message.answer(f'Юнит для пользователя {message.text} создан')
         case 500:
             await message.answer(f'Юнит для пользователя {message.text} не был создан из-за следующей ошибки:\n{text}')
-
 
     with suppress(TelegramBadRequest):
         await prev_message.delete()

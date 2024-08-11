@@ -15,7 +15,7 @@ from config import SERVER_HOST_IP, SERVER_HOST_PORT
 
 async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
     loguru.logger.info(f'SUB_INFO: requesting subscription info for user uid={uid}')
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         async with session.get(
                 f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info?token={config.BOT_API_TOKEN}') as resp:
             if resp.status == 200 and 'json' in resp.content_type:
@@ -45,7 +45,7 @@ async def give_days(uids: list[str], amount: int) -> dict[str, str]:
     '''    returns {uid: error} dictionary    '''
     loguru.logger.info(f'SUBS: requesting subs for {amount} days to {uids}')
     errors = {}
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         for uid in uids:
             async with session.get(
                     f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/give_days?amount={amount}&token={config.BOT_API_TOKEN}') as resp:
@@ -73,7 +73,7 @@ async def get_user_ids(status: str = None) -> list[int] | None:
     if status is None:
         status = ''
     loguru.logger.info('USER_IDS: requesting user_ids from server')
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_user_ids?status={status}&token={config.BOT_API_TOKEN}'
         async with session.get(url) as resp:
             try:
@@ -89,17 +89,22 @@ async def get_user_ids(status: str = None) -> list[int] | None:
 
 
 INSTRUMENTS = Instruments(
-    Instrument(name='🐳 Bidder',
+    Instrument(name='🐳 Collection Bidder',
                server_name='unit'),
+    Instrument(name='🔍 Scanner',
+               server_name='scanner',
+               stopable=False),
 )
 
 
-async def send_unit_command(uid: int | str, command: str, data=None) -> dict | tuple[int, str] | str:
+async def send_instrument_command(uid: int | str, instrument_server_name: str, command: str, data=None) \
+        -> dict | tuple[int, str] | str:
     if data is None:
         data = {}
-    async with aiohttp.ClientSession() as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}&token={config.BOT_API_TOKEN}'
-        loguru.logger.info(f'SEND_UNIT_COMMAND: send {command} to unit {uid}')
+    async with aiohttp.ClientSession(trust_env=True) as session:
+        arguments = "&".join(f"{k}={v}" for k, v in data.items())
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/{instrument_server_name}/{uid}/{command}?{arguments}&token={config.BOT_API_TOKEN}'
+        loguru.logger.info(f'SEND_UNIT_COMMAND: send {command} to {instrument_server_name} {uid}')
         async with session.get(url) as resp:
             if 'json' in resp.content_type:
                 return await resp.json()
@@ -108,7 +113,7 @@ async def send_unit_command(uid: int | str, command: str, data=None) -> dict | t
 
 
 async def increase_user_balance(uid, paid_amount):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/increase_balance?amount={paid_amount}&token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'INCREASE_USER_BALANCE: requesting increase balance for user {uid}')
         async with session.get(url) as resp:
@@ -120,7 +125,7 @@ async def add_proxies(proxies: list[str], uid: int | str | None, overwrite: bool
     if uid is None, proxies will be added to idle list\n
     else to specified unit
     """
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         if uid is None:
             url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/add_proxies?overwrite={overwrite}&token={config.BOT_API_TOKEN}'
         else:
@@ -131,7 +136,7 @@ async def add_proxies(proxies: list[str], uid: int | str | None, overwrite: bool
 
 
 async def get_units_status() -> dict | tuple[int, str]:
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/server/get_units_status?token={config.BOT_API_TOKEN}'
         async with session.get(url) as resp:
             if resp.status == 200:
@@ -141,7 +146,7 @@ async def get_units_status() -> dict | tuple[int, str]:
 
 
 async def send_wallet_data(uid: int | str, data: dict):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/set_wallet_data?token={config.BOT_API_TOKEN}'
         async with session.post(url, json=data) as resp:
             loguru.logger.info(f'SEND_WALLET_DATA: sending wallet data for user {uid}')
@@ -149,7 +154,7 @@ async def send_wallet_data(uid: int | str, data: dict):
 
 
 async def unit_init_deinit(uid: int | str, init: bool):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(trust_env=True) as session:
         action = 'init' if init else 'deinit'
         url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/{action}?token={config.BOT_API_TOKEN}'
         async with session.get(url) as resp:

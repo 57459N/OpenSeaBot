@@ -7,6 +7,7 @@ from telegram_bot.handlers.callbacks_data import SelectCallback, PaginationCallb
     UnitCallbackData
 
 from telegram_bot.utils.api import INSTRUMENTS
+from utils.instrument import Instrument
 
 
 def get_choose_keyboard(options: list[str], selected: list[str] = None, page: int = 0) -> InlineKeyboardMarkup:
@@ -131,11 +132,9 @@ def get_to_who_add_proxies_keyboard():
             .as_markup())
 
 
-def get_adding_proxies_keyboard(overwrite: bool = False):
+def get_adding_proxies_keyboard():
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="✅ Finish", callback_data='add_proxies_finish'))
-            .add(InlineKeyboardButton(text=f"{'🟢' if overwrite else '🔴'} Перезаписать серверные прокси",
-                                      callback_data='add_proxies_overwrite_servers'))
             .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
@@ -229,8 +228,8 @@ def get_just_back_button_keyboard():
 def get_instruments_keyboard():
     b = InlineKeyboardBuilder()
     b.add(InlineKeyboardButton(text="FAQ", callback_data=InstrumentCallback(act='info',
-                                                                            inst='None',
-                                                                            param='None').pack()))
+                                                                             inst='None',
+                                                                             param='None').pack()))
 
     for i in INSTRUMENTS:
         b.add(InlineKeyboardButton(text=i.name, callback_data=InstrumentCallback(inst=i.name,
@@ -242,30 +241,33 @@ def get_instruments_keyboard():
     return b.as_markup()
 
 
-def get_instrument_keyboard(instrument_name: str):
-    return (InlineKeyboardBuilder()
-            .add(InlineKeyboardButton(text="Run bot", callback_data=InstrumentCallback(act='start',
-                                                                                       inst=instrument_name,
-                                                                                       param='None').pack()))
-            .add(InlineKeyboardButton(text="Stop", callback_data=InstrumentCallback(act='stop',
-                                                                                    inst=instrument_name,
-                                                                                    param='None').pack()))
-            .add(InlineKeyboardButton(text="Settings", callback_data=InstrumentCallback(act='settings',
-                                                                                        inst=instrument_name,
-                                                                                        param='None').pack()))
-            .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
-            .adjust(2, 2)
-            .as_markup())
+def get_instrument_keyboard(instrument: Instrument):
+    b = InlineKeyboardBuilder()
+    b.add(InlineKeyboardButton(text="Start", callback_data=InstrumentCallback(act='start',
+                                                                                inst=instrument.server_name,
+                                                                                param='None').pack()))
+    if instrument.stopable:
+        b.add(InlineKeyboardButton(text="Stop", callback_data=InstrumentCallback(act='stop',
+                                                                                 inst=instrument.server_name,
+                                                                                 param='None').pack()))
+    (b.add(InlineKeyboardButton(text="Settings", callback_data=InstrumentCallback(act='settings',
+                                                                                  inst=instrument.server_name,
+                                                                                  param='None').pack()))
+     .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
+     .adjust(2, 2)
+     )
+
+    return b.as_markup()
 
 
-def get_instrument_settings_keyboard(instrument_name: str, fields: list[str]):
+def get_instrument_settings_keyboard(instrument: Instrument, fields: list[str]):
     b = InlineKeyboardBuilder()
     for field in fields:
         b.add(InlineKeyboardButton(text=field, callback_data=InstrumentCallback(act='settings_change',
-                                                                                inst=instrument_name,
+                                                                                inst=instrument.server_name,
                                                                                 param=field).pack()))
     b.add(InlineKeyboardButton(text="✅ Finish", callback_data=InstrumentCallback(act='settings_finish',
-                                                                                 inst=instrument_name,
+                                                                                 inst=instrument.server_name,
                                                                                  param='None').pack()))
     b.add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
     b.adjust(2)

@@ -48,5 +48,5 @@ async def instrument_settings_message_handler(message: types.Message, state: FSM
         active=parameter,
         header=f'Settings of {instrument.name}:'
     ).as_html()
-    kb = (kbs.get_instrument_settings_keyboard(instrument.name, settings.keys()))
+    kb = (kbs.get_instrument_settings_keyboard(instrument, settings.keys()))
     await settings_message.edit_text(text=answer, reply_markup=kb, parse_mode='HTML')

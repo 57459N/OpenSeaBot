@@ -1,37 +1,21 @@
 import asyncio
-
-import loguru
 import os
 from dataclasses import asdict
 
+import aiohttp
+import loguru
 from aiogram.utils.formatting import Code
 from aiohttp import web, ClientResponseError
-import aiohttp
 from aiohttp.web_request import Request
-from web3 import Account
+from eth_account import Account
 
 import config
+from encryption.system import decrypt_private_key, encrypt_private_key
+from misc import unit_exists, init_unit, deinit_unit, delete_unit, create_unit, send_message_to_support, add_proxies
+from user_info import UserInfo, UserStatus
 from payments.system import manager as payments_manager
-from server.misc import create_unit, init_unit, unit_exists, send_message_to_support, add_proxies, delete_unit, \
-    encrypt_private_key, deinit_unit
-from server.user_info import UserInfo, UserStatus
-from encryption.system import decrypt_private_key
 
 routes = web.RouteTableDef()
-
-
-@routes.get('/server/get_units_status')
-async def get_units_status_handler(request: Request):
-    data = {}
-    for d in os.listdir('./units'):
-        if not unit_exists(d) or not d.isdigit():
-            continue
-        data[d] = False
-
-    data.update({k: v is not None for k, v in request.app['active_units'].items()})
-
-    loguru.logger.info(f'SERVER:GET_UNITS_STATUS: sending units statuses')
-    return web.json_response(data)
 
 
 @routes.get('/unit/{uid}/init')
@@ -363,9 +347,8 @@ async def add_idle_proxies_handler(request: Request):
         loguru.logger.warning(f'SERVER:ADD_IDLE_PROXIES: bad request')
         return web.Response(status=400, text='`proxies` must be a list of strings in json format')
 
-    overwrite = request.rel_url.query.get('overwrite', 'False') == 'True'
-    await add_proxies('./.idle_proxies', proxies=proxies, overwrite=overwrite)
-    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies {"overwritten" if overwrite else "added"}')
+    await add_proxies('./.idle_proxies', proxies)
+    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies added')
     return web.Response()
 
 
@@ -387,8 +370,7 @@ async def add_unit_proxies_handler(request: Request):
         loguru.logger.warning(f'SERVER:ADD_UNIT_PROXIES: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
-    overwrite = request.rel_url.query.get('overwrite', 'False') == 'True'
-    await add_proxies(f'./units/{uid}/proxies.txt', proxies=proxies, overwrite=overwrite)
+    await add_proxies(f'./units/{uid}/proxies.txt', proxies)
     loguru.logger.info(f'SERVER:ADD_UNIT_PROXIES: {len(proxies)} proxies added to user {uid}')
     return web.Response()
 

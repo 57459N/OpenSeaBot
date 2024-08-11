@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 import config
 from telegram_bot.handlers.callbacks_data import InstrumentCallback
 from telegram_bot.middlwares.backable_query_middleware import BackableMiddleware
+from utils.api import INSTRUMENTS
 
 from .states import InstrumentStates
 from telegram_bot.utils import api
@@ -16,12 +17,6 @@ import telegram_bot.utils.keyboards as kbs
 
 router = Router()
 router.callback_query.middleware(BackableMiddleware())
-
-get_settings_map = {
-    'Floor Lister': 'floor_lister',
-    'Collection Scanner': 'collection_scanner',
-    'Collection Bidder': 'collection_bidder'
-}
 
 
 @router.callback_query(InstrumentCallback.filter(F.act == 'info'))
@@ -39,8 +34,9 @@ HERE WILL BE FAQ AND GITBOOK AND LINKS TO OUR RESOURSES
 @router.callback_query(InstrumentCallback.filter(F.act == 'menu'))
 @flags.backable()
 async def instruments_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
-    await query.message.edit_text(text=f'Menu dodelat nado {callback_data.inst}',
-                                  reply_markup=kbs.get_instrument_keyboard(callback_data.inst))
+    instrument = api.INSTRUMENTS[callback_data.inst]
+    await query.message.edit_text(text=f'Menu dodelat nado {instrument.name}',
+                                  reply_markup=kbs.get_instrument_keyboard(instrument))
     await query.answer()
 
 
@@ -50,7 +46,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
                                                 state: FSMContext):
     uid = query.from_user.id
     instrument = api.INSTRUMENTS[callback_data.inst]
-    settings = await api.send_unit_command(uid, 'get_settings')
+    settings = await api.send_instrument_command(uid, instrument.server_name, 'get_settings')
     if isinstance(settings, tuple):
         await query.answer('Error while getting settings')
         return
@@ -62,7 +58,7 @@ async def instruments_settings_callback_handler(query: types.CallbackQuery, call
                                                                    header=f'Settings of {instrument.name}:'
                                                                    ).as_html(),
                                   parse_mode='HTML',
-                                  reply_markup=kbs.get_instrument_settings_keyboard(instrument.name, settings.keys()))
+                                  reply_markup=kbs.get_instrument_settings_keyboard(instrument, settings.keys()))
     await query.answer()
 
 
@@ -78,15 +74,16 @@ async def instruments_settings_change_callback_handler(query: types.CallbackQuer
         await query.message.delete()
         return
 
+    instrument = INSTRUMENTS[callback_data.inst]
     await state.set_state(InstrumentStates.settings_change)
     await state.update_data(parameter=callback_data.param)
     await query.message.edit_text(text=get_settings_beautiful_list(settings=settings,
                                                                    prev_settings=prev_settings,
                                                                    active=callback_data.param,
-                                                                   header=f'Settings of {callback_data.inst}:'
+                                                                   header=f'Settings of {instrument.name}:'
                                                                    ).as_html(),
                                   parse_mode='HTML',
-                                  reply_markup=kbs.get_instrument_settings_keyboard(callback_data.inst,
+                                  reply_markup=kbs.get_instrument_settings_keyboard(instrument,
                                                                                     settings.keys()))
     await query.answer()
 
@@ -107,7 +104,7 @@ async def instruments_settings_finish_callback_handler(query: types.CallbackQuer
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    status, text = await api.send_unit_command(uid, 'set_settings', settings)
+    status, text = await api.send_instrument_command(uid, instrument.server_name, 'set_settings', settings)
     match status:
         case 200:
             await query.message.edit_text(f"{instrument.name}'s settings set successfully")
@@ -125,7 +122,7 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
 
-    status, text = await api.send_unit_command(uid, 'start')
+    status, text = await api.send_instrument_command(uid, instrument.server_name, 'start')
     match status:
         case 200:
             await query.answer(text, show_alert=True)
@@ -151,7 +148,7 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
 async def instruments_start_callback_handler(query: types.CallbackQuery, callback_data: InstrumentCallback):
     instrument = api.INSTRUMENTS[callback_data.inst]
     uid = query.from_user.id
-    status, text = await api.send_unit_command(uid, 'stop')
+    status, text = await api.send_instrument_command(uid, instrument.server_name, 'stop')
     match status:
         case 200:
             await query.answer(text, show_alert=True)

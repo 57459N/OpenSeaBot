@@ -161,6 +161,8 @@ class WorkAccount(TelegramLogger):
             try:
                 tasks = [self.approve_opensea(), self.wrap_eth()]
                 await asyncio.gather(*tasks)
+
+                await asyncio.sleep(60)
             
             except Exception as _err:
                 logger.exception(_err)

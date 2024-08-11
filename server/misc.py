@@ -138,7 +138,7 @@ async def daily_sub_balance_decrease(app: web.Application):
             try:
                 with UserInfo(f'./units/{uid}/.userinfo') as ui:
                     if ui.status != UserStatus.active and uid in app['active_units']:
-                        async with aiohttp.ClientSession() as session:
+                        async with aiohttp.ClientSession(trust_env=True) as session:
                             async with session.get(
                                     url=f"http://127.0.0.1:{app['active_units'][uid].port}/is_running") as resp:
                                 is_running = await resp.text() == 'True'
@@ -158,9 +158,9 @@ async def daily_sub_balance_decrease(app: web.Application):
 
 async def send_message_to_support(message: str):
     text = f'❗OpenSea Bot Error Message❗\n\n{message}'
-    async with aiohttp.ClientSession() as session:
-        resp = await session.post(url=f'https://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
-                                  data={'chat_id': config.SUPPORT_UID, 'text': text, 'parse_mode': 'HTML'})
+    async with aiohttp.ClientSession(trust_env=True) as session:
+        resp = await session.post(url=f'http://api.telegram.org/bot{config.BOT_API_TOKEN}/sendMessage',
+                                  data={'chat_id': config.SUPPORT_UID, 'text': text, 'parse_mode': 'HTML'}, ssl=False)
 
 
 async def add_proxies(filepath: str, proxies: list[str], overwrite: bool = False):
