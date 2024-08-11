@@ -36,7 +36,7 @@ async def wallet_data_menu_callback_handler(query: types.CallbackQuery):
 
 @router.callback_query(lambda query: query.data == 'wallet_data_get_private')
 async def get_wallet_data_callback_handler(query: types.CallbackQuery, state: FSMContext):
-    key = await api.send_unit_command(query.from_user.id, 'get_private_key')
+    key = await api.send_instrument_command(query.from_user.id, 'unit', 'get_private_key')
 
     if isinstance(key, tuple):
         await query.answer("😔 <b>Your unit has not been created, contact support.</b>", show_alert=True)
