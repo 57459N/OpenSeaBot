@@ -1,6 +1,6 @@
 from web3 import Web3
 import random
-import time 
+from time import time
 
 OPENSEA_PRO_URL = "https://api.pro.opensea.io/"
 
@@ -291,8 +291,8 @@ async def generate_selling_data(
                     "recipient": "0x0000a26b00c1f0df003000390027140000faa719"
                 }
             ],
-            "startTime": int(time.time()),
-            "endTime": int(time.time() + 60*60*24*15),
+            "startTime": int(time()),
+            "endTime": int(time() + 60*60*24*15),
             "orderType": 0,
             "zone": "0x004c00500000ad104d7dbd00e3ae0a5c00560c00",
             "zoneHash": bytes.fromhex("0000000000000000000000000000000000000000000000000000000000000000"),

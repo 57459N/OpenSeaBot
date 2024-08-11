@@ -33,12 +33,16 @@ async def start_program(app=None):
         ).infinity_handler()
     )
 
+    with open('proxies.txt') as file:
+        proxies = [row.strip() for row in file.readlines()]
+    main_proxies = proxies[:2]
+
     asyncio.create_task(
         SellAccount(
             bot_token=BOT_API_TOKEN,
             user_id=account_data["user_id"],
             secret_key=account_data["private_key"],
-            proxies=account_data["settings"]["proxies"]["main"],
+            proxies=main_proxies,
             provider_link=RPC_CONFIG["ethereum"]["rpcs"][0],
             max_gwei=50,  # todo: user may change it by himself
             max_dump_percent=1
