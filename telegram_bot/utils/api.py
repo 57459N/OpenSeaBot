@@ -102,7 +102,8 @@ async def send_instrument_command(uid: int | str, instrument_server_name: str, c
     if data is None:
         data = {}
     async with aiohttp.ClientSession(trust_env=True) as session:
-        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/{instrument_server_name}/{uid}/{command}?{"&".join(f"{k}={v}" for k, v in data.items())}&token={config.BOT_API_TOKEN}'
+        arguments = "&".join(f"{k}={v}" for k, v in data.items())
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/{instrument_server_name}/{uid}/{command}?{arguments}&token={config.BOT_API_TOKEN}'
         loguru.logger.info(f'SEND_UNIT_COMMAND: send {command} to {instrument_server_name} {uid}')
         async with session.get(url) as resp:
             if 'json' in resp.content_type:
