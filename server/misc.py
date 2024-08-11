@@ -163,11 +163,12 @@ async def send_message_to_support(message: str):
                                   data={'chat_id': config.SUPPORT_UID, 'text': text, 'parse_mode': 'HTML'}, ssl=False)
 
 
-async def add_proxies(filepath: str, proxies: list[str]):
+async def add_proxies(filepath: str, proxies: list[str], overwrite: bool = False):
     def process(proxy: str):
         return proxy.strip() + '\n'
 
-    async with aiofiles.open(filepath, 'a') as f:
+    mode = 'w' if overwrite else 'a'
+    async with aiofiles.open(filepath, mode) as f:
         await f.writelines(list(map(process, proxies)))
 
 

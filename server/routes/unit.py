@@ -1,15 +1,19 @@
 import asyncio
+import os
+from dataclasses import asdict
 
 import aiohttp
 import loguru
-from aiohttp import web
+from aiogram.utils.formatting import Code
+from aiohttp import web, ClientResponseError
 from aiohttp.web_request import Request
 from eth_account import Account
 
 import config
 from encryption.system import decrypt_private_key, encrypt_private_key
-from misc import unit_exists, init_unit, deinit_unit, delete_unit, create_unit, send_message_to_support
+from misc import unit_exists, init_unit, deinit_unit, delete_unit, create_unit, send_message_to_support, add_proxies
 from user_info import UserInfo, UserStatus
+from payments.system import manager as payments_manager
 
 routes = web.RouteTableDef()
 
@@ -107,7 +111,7 @@ async def unit_start_handler(request: Request):
             loguru.logger.warning(f'SERVER:START_UNIT: subscription of user {uid} is not active')
             return web.Response(status=403, text=f'subscription of user {uid} is not active')
 
-    async with aiohttp.ClientSession(trust_env=True) as session:
+    async with aiohttp.ClientSession() as session:
         url = f'http://localhost:{active_units[uid].port}/start'
         async with session.get(url) as resp:
             return web.Response(status=resp.status, text=await resp.text())
@@ -125,7 +129,7 @@ async def unit_stop_handler(request: Request):
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     active_units = request.app['active_units']
-    async with aiohttp.ClientSession(trust_env=True) as session:
+    async with aiohttp.ClientSession() as session:
         url = f'http://localhost:{active_units[uid].port}/stop'
         async with session.get(url) as resp:
             return web.Response(status=resp.status, text=await resp.text())
@@ -145,7 +149,7 @@ async def get_settings_handler(request: Request):
     # todo: check if unit is initialized
 
     active_units = request.app['active_units']
-    async with aiohttp.ClientSession(trust_env=True) as session:
+    async with aiohttp.ClientSession() as session:
         url = f'http://localhost:{active_units[uid].port}/get_settings'
         async with session.get(url) as resp:
             return web.json_response(await resp.json(encoding='utf-8'))
@@ -166,7 +170,7 @@ async def set_settings_handler(request: Request):
     settings = dict(request.rel_url.query)
     if 'token' in settings:
         settings.pop('token')
-    async with aiohttp.ClientSession(trust_env=True) as session:
+    async with aiohttp.ClientSession() as session:
         url = f'http://localhost:{active_units[uid].port}/set_settings'
         async with session.post(url, data=settings) as resp:
             return web.Response(status=resp.status, text=await resp.text())
@@ -239,6 +243,115 @@ async def get_private_key_handler(request: Request):
     return web.json_response(encrypted_to_send.decode('utf-8'))
 
 
+@routes.get('/user/{uid}/increase_balance')
+async def increase_user_balance_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    amount = request.rel_url.query.get('amount', None)
+    if uid is None or amount is None:
+        loguru.logger.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
+        return web.Response(status=400,
+                            text='Provide `uid`, `amount` parameters into URL.'
+                                 ' For example: /user/1/increase_balance?amount=10')
+    try:
+        amount = float(amount)
+        a = int(uid)
+    except ValueError:
+        loguru.logger.warning(f'SERVER:INCREASE_USER_BALANCE: bad request')
+        return web.Response(status=400,
+                            text='`uid` must be an integer\n`amount` must be a number. 777 or 3.14'
+                                 ' For example: /user/1/increase_balance?amount=10')
+
+    # User's unit is not created yet
+    if not unit_exists(uid):
+        try:
+            await create_unit(uid)
+            request.app['active_units'][uid] = init_unit(uid)
+        except Exception as e:
+            loguru.logger.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not fully created\n{e}')
+            await send_message_to_support(f'User {Code(uid).as_html()}: {e}')
+
+    with UserInfo(f'./units/{uid}/.userinfo') as ui:
+        ui.increase_balance_and_activate(amount=amount)
+
+    loguru.logger.info(f'SERVER:INCREASE_USER_BALANCE: balance increased by {amount} to user {uid}')
+
+    return web.Response(status=200, text='OK')
+
+
+@routes.get('/user/{uid}/give_days')
+async def give_days_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    amount = request.rel_url.query.get('amount', None)
+    # todo: add token validation
+    if amount is None or not amount.isdigit():
+        loguru.logger.warning(f'SERVER:GIVE_DAYS: bad request')
+        return web.Response(status=400,
+                            text='Provide `amount` parameter as number into URL. For example: /user/1/give_days?amount=10')
+
+    if not unit_exists(uid):
+        loguru.logger.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
+        return web.Response(status=404, text=f'Unit {uid} not found')
+
+    if os.path.exists(f'./units/{uid}/.userinfo'):
+        with UserInfo(f'./units/{uid}/.userinfo') as ui:
+            ui.increase_balance_and_activate(amount=config.SUB_COST_DAY * int(amount))
+            loguru.logger.info(f'SERVER:GIVE_DAYS: {amount} days given to user {uid}')
+            return web.Response(status=200, text='OK')
+    else:
+        return web.Response(status=409, text=f'User {uid} config is not found.')
+
+
+@routes.get('/user/{uid}/get_info')
+async def get_user_info_handler(request: Request):
+    uid = request.match_info.get('uid', None)
+    if uid is None:
+        loguru.logger.warning(f'SERVER:GET_USER_INFO: bad request')
+        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /user/1/get_info')
+
+    if not unit_exists(uid):
+        return web.json_response({'activation_cost': config.SUB_COST_MONTH})
+
+    with UserInfo(f'./units/{uid}/.userinfo') as ui:
+        dict_ui = asdict(ui)
+        dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST_DAY
+
+        if ui.status == UserStatus.deactivated:
+            dict_ui['activation_cost'] = config.SUB_COST_DAY
+        elif ui.status == UserStatus.inactive:
+            dict_ui['activation_cost'] = config.SUB_COST_MONTH
+
+        try:
+            balance = await payments_manager.fetch_bot_balance(ui.bot_wallet)
+            dict_ui['bot_balance_eth'] = balance['eth']
+            dict_ui['bot_balance_weth'] = balance['weth']
+        except ClientResponseError:
+            dict_ui['bot_balance_eth'] = 'Not loaded'
+            dict_ui['bot_balance_weth'] = 'Not loaded'
+        except ValueError:
+            dict_ui['bot_balance_eth'] = 'Incorrect wallet format'
+            dict_ui['bot_balance_weth'] = 'Incorrect wallet format'
+
+    return web.json_response(dict_ui)
+
+
+@routes.post('/server/add_proxies')
+async def add_idle_proxies_handler(request: Request):
+    try:
+        proxies = await request.json()
+        if not isinstance(proxies, list):
+            raise ValueError
+        for el in proxies:
+            if not isinstance(el, str):
+                raise ValueError
+    except ValueError:
+        loguru.logger.warning(f'SERVER:ADD_IDLE_PROXIES: bad request')
+        return web.Response(status=400, text='`proxies` must be a list of strings in json format')
+
+    await add_proxies('./.idle_proxies', proxies)
+    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies added')
+    return web.Response()
+
+
 @routes.post('/unit/{uid}/add_proxies')
 async def add_unit_proxies_handler(request: Request):
     try:
@@ -260,3 +373,24 @@ async def add_unit_proxies_handler(request: Request):
     await add_proxies(f'./units/{uid}/proxies.txt', proxies)
     loguru.logger.info(f'SERVER:ADD_UNIT_PROXIES: {len(proxies)} proxies added to user {uid}')
     return web.Response()
+
+
+@routes.get('/server/get_user_ids')
+async def get_user_ids_handler(request: Request):
+    status: str | None = request.rel_url.query.get('status', None)
+
+    user_ids = []
+    use_status = False
+    if status is not None and status != '' and status.lower() != 'all':
+        use_status = True
+        status = status.capitalize()
+
+    for file in os.listdir('./units'):
+        if not os.path.isdir(f'./units/{file}') or not file.isdigit():
+            continue
+
+        with UserInfo(f'./units/{file}/.userinfo') as ui:
+            if not use_status or ui.status == status:
+                user_ids.append(file)
+
+    return web.json_response({'user_ids': user_ids})

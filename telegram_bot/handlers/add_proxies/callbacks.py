@@ -2,6 +2,7 @@ import asyncio
 
 from aiogram import Router, types, flags, F
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
 
 from handlers.callbacks_data import PaginationCallback
 from telegram_bot.handlers.add_proxies.states import AddProxiesStates
@@ -10,6 +11,16 @@ from telegram_bot.utils import api
 import utils.keyboards as kbs
 
 router = Router()
+
+
+async def edit_with_add_proxies_list_message(query: types.CallbackQuery, state: FSMContext):
+    overwrite = (await state.get_data()).get('overwrite', False)
+    await query.message.edit_text(
+        'Отправьте список проксей:\n'
+        '\tКаждая новая строка будет расценена как отдельная ссылка\n'
+        '\tВ сообщении должно быть максимум 4096 символов\n'
+        '\tДля отправки неограниченного количества ссылок отправьте txt файл',
+        reply_markup=kbs.get_adding_proxies_keyboard(overwrite=overwrite))
 
 
 @router.callback_query(lambda query: query.data == 'add_proxies')
@@ -26,12 +37,7 @@ async def add_proxies_idle_callback_handler(query: types.CallbackQuery, state: F
     await state.update_data(proxies=None, to_who='idle')
     await state.set_state(AddProxiesStates.list)
 
-    await query.message.edit_text(
-        'Отправьте список проксей:\n'
-        '\tКаждая новая строка будет расценена как отдельная ссылка\n'
-        '\tВ сообщении должно быть максимум 4096 символов\n'
-        '\tДля отправки неограниченного количества ссылок отправьте txt файл',
-        reply_markup=kbs.get_adding_proxies_keyboard())
+    await edit_with_add_proxies_list_message(query, state)
     await query.answer()
 
 
@@ -57,20 +63,25 @@ async def add_proxies_user_end_callback_handler(query: types.CallbackQuery, stat
     else:
         await state.set_state(AddProxiesStates.list)
         await state.update_data(user_id=next(iter(selected)))
-        await query.message.edit_text(
-            'Отправьте список проксей:\n'
-            '\tКаждая новая строка будет расценена как отдельная ссылка\n'
-            '\tВ сообщении должно быть максимум 4096 символов\n'
-            '\tДля отправки неограниченного количества ссылок отправьте txt файл',
-            reply_markup=kbs.get_adding_proxies_keyboard())
+        await edit_with_add_proxies_list_message(query, state)
         await query.answer()
+
+
+@router.callback_query(lambda query: query.data == 'add_proxies_overwrite_servers', AddProxiesStates.list)
+async def add_proxies_overwrite_servers_callback_handler(query: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    overwrite = data.get('overwrite', False)
+    await state.update_data(overwrite=not overwrite)
+    await edit_with_add_proxies_list_message(query, state)
+    await query.answer()
 
 
 @router.callback_query(lambda query: query.data == 'add_proxies_finish', AddProxiesStates.list)
 async def add_proxies_list_callback_handler(query: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     to_who = data.get('to_who')
-    proxies = data.get('proxies', None)
+    proxies: list[str] | None = data.get('proxies', None)
+    overwrite = data.get('overwrite', False)
     uid = None
     if proxies is None or len(proxies) == 0:
         await query.answer('Добавьте хотя бы одну ссылку', show_alert=True)
@@ -79,7 +90,7 @@ async def add_proxies_list_callback_handler(query: types.CallbackQuery, state: F
     if to_who == 'user':
         uid = data.get('user_id', None)
 
-    status, text = await api.add_proxies(proxies, uid)
+    status, text = await api.add_proxies(proxies=proxies, uid=uid, overwrite=overwrite)
 
     if status == 200:
         await query.message.edit_text('Прокси добавлены')
@@ -87,7 +98,5 @@ async def add_proxies_list_callback_handler(query: types.CallbackQuery, state: F
         await query.message.delete()
     else:
         await query.message.edit_text(text)
-
+    await state.clear()
     await query.answer()
-
-

@@ -132,12 +132,15 @@ def get_to_who_add_proxies_keyboard():
             .as_markup())
 
 
-def get_adding_proxies_keyboard():
+def get_adding_proxies_keyboard(overwrite: bool = False):
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="✅ Finish", callback_data='add_proxies_finish'))
+            .add(InlineKeyboardButton(text=f"{'🟢' if overwrite else '🔴'} Перезаписать серверные прокси",
+                                      callback_data='add_proxies_overwrite_servers'))
             .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
+
 
 
 def get_givedays_type_keyboard():
@@ -228,17 +231,16 @@ def get_just_back_button_keyboard():
 def get_instruments_keyboard():
     b = InlineKeyboardBuilder()
     b.add(InlineKeyboardButton(text="FAQ", callback_data=InstrumentCallback(act='info',
-                                                                            inst='None',
-                                                                            param='None').pack()))
+                                                                             inst='None',
+                                                                             param='None').pack()))
 
     for i in INSTRUMENTS:
         b.add(InlineKeyboardButton(text=i.name, callback_data=InstrumentCallback(inst=i.name,
                                                                                  act='menu',
                                                                                  param='None').pack()))
-
     b.add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
 
-    b.adjust(1, 2, 1)
+    b.adjust(2)
     return b.as_markup()
 
 
