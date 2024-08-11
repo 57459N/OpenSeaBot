@@ -10,8 +10,10 @@ sys.path.append(os.getcwd())
 
 from aiohttp.web_request import Request
 
-from server.routes import routes
 from server.misc import init_unit, Unit, daily_sub_balance_decrease, validate_token
+from routes.server import routes as server_routes
+from routes.unit import routes as unit_routes
+from routes.user import routes as user_routes
 
 
 async def daily_ctx(app: web.Application):
@@ -58,7 +60,9 @@ def main():
 
     app.cleanup_ctx.append(daily_ctx)
 
-    app.add_routes(routes)
+    app.add_routes(server_routes)
+    app.add_routes(user_routes)
+    app.add_routes(unit_routes)
 
     web.run_app(app, port=port)
 
