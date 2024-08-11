@@ -11,8 +11,8 @@ from eth_account import Account
 
 import config
 from encryption.system import decrypt_private_key, encrypt_private_key
-from misc import unit_exists, init_unit, deinit_unit, delete_unit, create_unit, send_message_to_support, add_proxies
-from user_info import UserInfo, UserStatus
+from server.misc import unit_exists, init_unit, deinit_unit, delete_unit, create_unit, send_message_to_support, add_proxies
+from server.user_info import UserInfo, UserStatus
 from payments.system import manager as payments_manager
 
 routes = web.RouteTableDef()
@@ -93,6 +93,7 @@ async def unit_create_handler(request: Request):
 @routes.get('/unit/{uid}/start')
 async def unit_start_handler(request: Request):
     uid = request.match_info.get('uid', None)
+
     if uid is None:
         loguru.logger.warning(f'SERVER:START_UNIT: bad request')
         return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/start')
@@ -159,11 +160,11 @@ async def get_settings_handler(request: Request):
 async def set_settings_handler(request: Request):
     uid = request.match_info.get('uid', None)
     if uid is None:
-        loguru.logger.warning(f'SERVER:START_UNIT: bad request')
+        loguru.logger.warning(f'SERVER:SET_SETTINGS: bad request')
         return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/set_settings')
 
     if not unit_exists(uid):
-        loguru.logger.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
+        loguru.logger.warning(f'SERVER:SET_SETTINGS: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
 
     active_units = request.app['active_units']

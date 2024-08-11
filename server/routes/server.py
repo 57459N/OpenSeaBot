@@ -4,8 +4,8 @@ import loguru
 from aiohttp import web
 from aiohttp.web_request import Request
 
-from misc import unit_exists, add_proxies
-from user_info import UserInfo
+from server.misc import unit_exists, add_proxies
+from server.user_info import UserInfo
 
 routes = web.RouteTableDef()
 

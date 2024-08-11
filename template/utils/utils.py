@@ -8,7 +8,7 @@ from cryptography.fernet import Fernet
 
 from utils.database import (
     get_settings_data_from_db,
-    get_data_from_db
+    get_data_from_db, update_settings_database
 )
 from utils.paths import *
 
@@ -50,3 +50,5 @@ async def decrypt_secret_key(filepath: str, password: str) -> str:
 
     except Exception as error:
         return str(error)
+
+

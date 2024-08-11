@@ -8,8 +8,8 @@ from aiohttp.web_request import Request
 
 import config
 from payments.system import manager as payments_manager
-from misc import unit_exists, create_unit, init_unit, send_message_to_support
-from user_info import UserInfo, UserStatus
+from server.misc import unit_exists, create_unit, init_unit, send_message_to_support
+from server.user_info import UserInfo, UserStatus
 
 routes = web.RouteTableDef()
 
