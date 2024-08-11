@@ -135,10 +135,10 @@ async def daily_sub_balance_decrease(app: web.Application):
                     if ui.status != UserStatus.active and uid in app['active_units']:
                         async with aiohttp.ClientSession(trust_env=True) as session:
                             async with session.get(
-                                    url=f"http://127.0.0.1:{app['active_units'][uid].port}/is_running") as resp:
+                                    url=f"http://127.0.0.1:{app['active_units'][uid].port}/unit/is_running") as resp:
                                 is_running = await resp.text() == 'True'
                                 if is_running:
-                                    await session.get(url=f"http://127.0.0.1:{app['active_units'][uid].port}/stop")
+                                    await session.get(url=f"http://127.0.0.1:{app['active_units'][uid].port}/unit/stop")
                         continue
 
                     if ui.decrease_balance_or_deactivate(config.SUB_COST_DAY):

@@ -112,7 +112,7 @@ async def unit_start_handler(request: Request):
             return web.Response(status=403, text=f'subscription of user {uid} is not active')
 
     async with aiohttp.ClientSession() as session:
-        url = f'http://localhost:{active_units[uid].port}/start'
+        url = f'http://localhost:{active_units[uid].port}/unit/start'
         async with session.get(url) as resp:
             return web.Response(status=resp.status, text=await resp.text())
 
@@ -130,7 +130,7 @@ async def unit_stop_handler(request: Request):
 
     active_units = request.app['active_units']
     async with aiohttp.ClientSession() as session:
-        url = f'http://localhost:{active_units[uid].port}/stop'
+        url = f'http://localhost:{active_units[uid].port}/unit/stop'
         async with session.get(url) as resp:
             return web.Response(status=resp.status, text=await resp.text())
 
@@ -150,7 +150,7 @@ async def get_settings_handler(request: Request):
 
     active_units = request.app['active_units']
     async with aiohttp.ClientSession() as session:
-        url = f'http://localhost:{active_units[uid].port}/get_settings'
+        url = f'http://localhost:{active_units[uid].port}/unit/get_settings'
         async with session.get(url) as resp:
             return web.json_response(await resp.json(encoding='utf-8'))
 
@@ -171,7 +171,7 @@ async def set_settings_handler(request: Request):
     if 'token' in settings:
         settings.pop('token')
     async with aiohttp.ClientSession() as session:
-        url = f'http://localhost:{active_units[uid].port}/set_settings'
+        url = f'http://localhost:{active_units[uid].port}/unit/set_settings'
         async with session.post(url, data=settings) as resp:
             return web.Response(status=resp.status, text=await resp.text())
 

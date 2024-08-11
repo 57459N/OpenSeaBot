@@ -240,7 +240,7 @@ def get_instruments_keyboard():
                                                                                  param='None').pack()))
     b.add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
 
-    b.adjust(2)
+    b.adjust(1,2,1)
     return b.as_markup()
 
 

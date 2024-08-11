@@ -25,7 +25,7 @@ unit_port = -1
 unit_uid = int(os.path.basename(os.path.normpath(os.getcwd())))
 
 
-@routes.get('/start')
+@routes.get('/unit/start')
 async def start_get(request):
     is_running = await get_data_from_db()
     if is_running:
@@ -43,7 +43,7 @@ async def start_get(request):
     return web.Response(text='Unit started')
 
 
-@routes.get('/is_running')
+@routes.get('/unit/is_running')
 async def is_running_get(request):
     is_running = await get_data_from_db()
     if is_running:
@@ -54,7 +54,7 @@ async def is_running_get(request):
         return web.Response(text='False')
 
 
-@routes.get('/stop')
+@routes.get('/unit/stop')
 async def stop_get(request):
     loguru.logger.info('STOP')
     is_running = await get_data_from_db()
@@ -68,7 +68,7 @@ async def stop_get(request):
         return web.Response(text='Unit stopped')
 
 
-@routes.get('/get_settings')
+@routes.get('/unit/get_settings')
 async def get_settings_get(request):
     settings = await get_settings_data_from_db()
     settings = {
@@ -98,7 +98,7 @@ def validate_settings(data: dict[str, Any]) -> str | None:
             return f
 
 
-@routes.post('/set_settings')
+@routes.post('/unit/set_settings')
 async def set_settings_post(request: web.Request):
     settings = await request.post()
     try:
