@@ -95,7 +95,7 @@ def init_unit(uid: str) -> Unit:
         loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
         raise Exception(f'Юнит {uid} не существует')
 
-    process = Popen([sys.executable, f'unit.py', f'{port}'], cwd=f'./units/{uid}')
+    process = Popen([sys.executable, f'main.py', f'{port}'], cwd=f'./units/{uid}')
     unit = Unit(port=port, process=process)
     loguru.logger.info(f'SERVER:INIT_UNIT: unit {uid} initialized on port {port}')
     return unit
