@@ -79,9 +79,6 @@ async def get_user_info_handler(request: Request):
         loguru.logger.warning(f'SERVER:GET_USER_INFO: bad request')
         return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /user/1/get_info')
 
-    if not unit_exists(uid):
-        return web.json_response({'activation_cost': config.SUB_COST_MONTH})
-
     info_path = f'./units/{uid}/.userinfo'
 
     with UserInfo(info_path, create=True) as ui:
