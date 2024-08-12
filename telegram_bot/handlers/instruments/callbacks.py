@@ -156,6 +156,6 @@ async def instruments_start_callback_handler(query: types.CallbackQuery, callbac
             await query.answer(f'{instrument.name} is not running yet', show_alert=True)
         case _:
             await query.message.answer(
-                'Error on the server, try again later. If the problem recurs, contact support.',
-            reply_markup=kbs.get_support_keyboard())
+                text='Error on the server, try again later. If the problem recurs, contact support.',
+                reply_markup=kbs.get_support_keyboard())
             await query.answer(f'{instrument.name} unstopped')
