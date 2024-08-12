@@ -35,7 +35,7 @@ async def _get_proxies(filepath: str, amount: int) -> list[str]:
 
 
 async def create_unit(uid: int | str):
-    if os.path.exists(f'./units/{uid}'):
+    if unit_exists(uid):
         loguru.logger.error(f'SERVER:CREATE_UNIT: Unit {uid} already exists')
         raise Exception(f'Юнит {uid} уже существует')
 

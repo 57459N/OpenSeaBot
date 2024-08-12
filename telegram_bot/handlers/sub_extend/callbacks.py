@@ -43,7 +43,8 @@ async def sub_extend_generate_wallet_callback_handler(query: types.CallbackQuery
             paid_amount = response["balance"]
 
             wallet.paid = True
-            if await api.increase_user_balance(uid, paid_amount):
+            status, balance = await api.increase_user_balance(uid, paid_amount)
+            if status == 200:
                 text = f'<b>🎉 {paid_amount} usd has been credited to the balance. Thank you for payment</b>'
                 kb = kbs.get_delete_keyboard()
 

@@ -68,13 +68,14 @@ async def noop_callback_handler(query: types.CallbackQuery, state: FSMContext):
 @flags.backable()
 @router.callback_query(lambda query: query.data == 'sub_info_reload')
 async def sub_info_callback_handler(query: types.CallbackQuery):
-    if sub_info := await api.get_user_subscription_info_by_id(query.from_user.id):
-        status = sub_info.get('status', 'Inactive')
-        days_left = sub_info.get('days_left', 0)
-        own_balance = sub_info.get('balance', 0)
-        bot_wallet = sub_info.get('bot_wallet', None)
-        bot_balance_eth = sub_info.get('bot_balance_eth', None)
-        bot_balance_weth = sub_info.get('bot_balance_weth', None)
+    sub_info = await api.get_user_subscription_info_by_id(query.from_user.id)
+
+    status = sub_info.get('status', 'Inactive')
+    days_left = sub_info.get('days_left', 0)
+    own_balance = sub_info.get('balance', 0)
+    bot_wallet = sub_info.get('bot_wallet', None)
+    bot_balance_eth = sub_info.get('bot_balance_eth', None)
+    bot_balance_weth = sub_info.get('bot_balance_weth', None)
 
     text = f'''
 <b>📃 In this section you able to:</b>

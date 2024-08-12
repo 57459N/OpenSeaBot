@@ -32,8 +32,11 @@ async def increase_user_balance_handler(request: Request):
                             text='`uid` must be an integer\n`amount` must be a number. 777 or 3.14'
                                  ' For example: /user/1/increase_balance?amount=10')
 
-    # User's unit is not created yet
-    if not unit_exists(uid):
+    with UserInfo(f'./units/{uid}/.userinfo') as ui:
+        is_activated = ui.increase_balance_and_activate(amount=amount)
+        balance = ui.balance
+
+    if is_activated and not unit_exists(uid):
         try:
             await create_unit(uid)
             request.app['active_units'][uid] = init_unit(uid)
@@ -41,12 +44,9 @@ async def increase_user_balance_handler(request: Request):
             loguru.logger.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not fully created\n{e}')
             await send_message_to_support(f'User {Code(uid).as_html()}: {e}')
 
-    with UserInfo(f'./units/{uid}/.userinfo') as ui:
-        ui.increase_balance_and_activate(amount=amount)
-
     loguru.logger.info(f'SERVER:INCREASE_USER_BALANCE: balance increased by {amount} to user {uid}')
 
-    return web.Response(status=200, text='OK')
+    return web.Response(status=200, text=str(balance))
 
 
 @routes.get('/user/{uid}/give_days')
@@ -82,16 +82,22 @@ async def get_user_info_handler(request: Request):
     if not unit_exists(uid):
         return web.json_response({'activation_cost': config.SUB_COST_MONTH})
 
-    with UserInfo(f'./units/{uid}/.userinfo') as ui:
+    info_path = f'./units/{uid}/.userinfo'
+
+    with UserInfo(info_path, create=True) as ui:
+        ui.uid = int(uid)
         dict_ui = asdict(ui)
         dict_ui['days_left'] = dict_ui['balance'] // config.SUB_COST_DAY
 
         if ui.status == UserStatus.deactivated:
             dict_ui['activation_cost'] = config.SUB_COST_DAY
-        elif ui.status == UserStatus.inactive:
+        elif ui.status == UserStatus.inactive or not unit_exists(uid):
             dict_ui['activation_cost'] = config.SUB_COST_MONTH
 
         try:
+            if ui.bot_wallet == '':
+                raise ValueError
+
             balance = await payments_manager.fetch_bot_balance(ui.bot_wallet)
             dict_ui['bot_balance_eth'] = balance['eth']
             dict_ui['bot_balance_weth'] = balance['weth']

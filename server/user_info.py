@@ -16,20 +16,24 @@ class UserStatus(str, Enum):
 @dataclass
 class UserInfo:
     path: InitVar[str] = None
+    create: InitVar[bool] = False
 
     uid: int = -1
     status: str = UserStatus.inactive.value
     balance: float = 0.0
     bot_wallet: str = ""
 
-    def __post_init__(self, path: str):
+    def __post_init__(self, path: str, create: bool = False):
+        self.path = path
+
         if not os.path.exists(path):
-            raise ValueError(f'UserInfo file not found')
+            if create:
+                self.save()
+            else:
+                raise ValueError(f'UserInfo file not found')
 
         if os.path.getsize(path) == 0:
             raise ValueError(f'UserInfo is empty')
-
-        self.path = path
 
     def load(self):
         with open(self.path, 'r') as f:
@@ -37,10 +41,12 @@ class UserInfo:
             self.__dict__.update(_json)
 
     def save(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, 'w') as f:
             json.dump(asdict(self), f, indent=2)
 
-    def increase_balance_and_activate(self, amount: float):
+    def increase_balance_and_activate(self, amount: float) -> bool:
+        ''':returns True if user was activated else False '''
         self.balance += amount
         # user already paid once, and we let hшm activate sub for a day
         # or user didn't pay monthly sub yet
@@ -48,8 +54,12 @@ class UserInfo:
                 (self.status == UserStatus.inactive and self.balance >= config.SUB_COST_MONTH):
             self.balance -= config.SUB_COST_DAY
             self.status = UserStatus.active
+            return True
+
+        return False
 
     def decrease_balance_or_deactivate(self, amount: float) -> bool:
+        ''':returns True if sub is successfully paid else False'''
         if self.balance < amount:
             self.status = UserStatus.deactivated
             return False
