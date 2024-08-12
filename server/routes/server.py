@@ -37,8 +37,9 @@ async def add_idle_proxies_handler(request: Request):
         loguru.logger.warning(f'SERVER:ADD_IDLE_PROXIES: bad request')
         return web.Response(status=400, text='`proxies` must be a list of strings in json format')
 
-    await add_proxies('./.idle_proxies', proxies)
-    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies added')
+    overwrite = request.rel_url.query.get('overwrite', 'False') == 'True'
+    await add_proxies('./.idle_proxies', proxies=proxies, overwrite=overwrite)
+    loguru.logger.info(f'SERVER:ADD_IDLE_PROXIES: {len(proxies)} proxies {"overwritten" if overwrite else "added"}')
     return web.Response()
 
 
