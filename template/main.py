@@ -6,6 +6,8 @@ from aiohttp import web
 from utils.unit import start_program, set_proxies
 
 from routes.unit import routes as unit_routes
+from routes.seller import routes as seller_routes
+from routes.scanner import routes as scanner_routes
 
 
 def main():
@@ -17,6 +19,8 @@ def main():
     app['uid'] = uid
 
     app.add_routes(unit_routes)
+    app.add_routes(seller_routes)
+    app.add_routes(scanner_routes)
 
     app.on_startup.extend([start_program, set_proxies])
     web.run_app(app, port=port)
