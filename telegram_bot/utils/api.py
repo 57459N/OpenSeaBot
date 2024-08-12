@@ -94,6 +94,8 @@ INSTRUMENTS = Instruments(
     Instrument(name='🔍 Scanner',
                server_name='scanner',
                stopable=False),
+    Instrument(name='💸 Seller',
+               server_name='seller'),
 )
 
 

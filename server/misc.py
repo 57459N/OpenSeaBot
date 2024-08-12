@@ -91,7 +91,7 @@ class Unit:
 
 def init_unit(uid: str) -> Unit:
     port = get_free_port()
-    if not os.path.exists(f'./units/{uid}/unit.py'):
+    if not os.path.exists(f'./units/{uid}/main.py'):
         loguru.logger.warning(f'SERVER:INIT_UNIT: unit {uid} is not found')
         raise Exception(f'Юнит {uid} не существует')
 
@@ -112,7 +112,7 @@ def validate_token(token: str) -> bool:
 
 
 def unit_exists(uid: int | str) -> bool:
-    return os.path.exists(f'./units/{uid}/unit.py')
+    return os.path.exists(f'./units/{uid}/main.py')
 
 
 async def daily_sub_balance_decrease(app: web.Application):
