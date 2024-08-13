@@ -1,3 +1,4 @@
+import asyncio
 import os
 from dataclasses import asdict
 
@@ -39,7 +40,9 @@ async def increase_user_balance_handler(request: Request):
     if is_activated and not unit_exists(uid):
         try:
             await create_unit(uid)
+            await asyncio.sleep(1)
             request.app['active_units'][uid] = init_unit(uid)
+            await asyncio.sleep(1)
         except Exception as e:
             loguru.logger.error(f'SERVER:FIRST_INCREASE_BALANCE: unit {uid} not fully created\n{e}')
             await send_message_to_support(f'User {Code(uid).as_html()}: {e}')

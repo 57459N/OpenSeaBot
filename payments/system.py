@@ -88,7 +88,7 @@ class PaymentsManager:
 
                 for result in results:
                     for resp in result:
-                        resp['balance'] = 239  # todo: DELETE IN PRODUCTION
+                        resp['balance'] = 240 # todo: DELETE IN PRODUCTION
                         if resp["balance"] > 0:
                             self._db.set_paid(wallet.address, chain_id=resp["chain_id"], paid=resp["balance"])
                             loguru.logger.info(

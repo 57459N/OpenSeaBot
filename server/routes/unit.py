@@ -73,10 +73,6 @@ async def unit_delete_handler(request: Request):
 @routes.get('/unit/{uid}/create')
 async def unit_create_handler(request: Request):
     uid = request.match_info.get('uid', None)
-    if uid is None:
-        loguru.logger.warning(f'SERVER:CREATE_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/create')
-
     try:
         await create_unit(uid)
         await asyncio.sleep(1)
@@ -93,10 +89,6 @@ async def unit_create_handler(request: Request):
 @routes.get('/unit/{uid}/start')
 async def unit_start_handler(request: Request):
     uid = request.match_info.get('uid', None)
-
-    if uid is None:
-        loguru.logger.warning(f'SERVER:START_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/start')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:START_UNIT: unit {uid} not found')
@@ -121,9 +113,6 @@ async def unit_start_handler(request: Request):
 @routes.get('/unit/{uid}/stop')
 async def unit_stop_handler(request: Request):
     uid = request.match_info.get('uid', None)
-    if uid is None:
-        loguru.logger.warning(f'SERVER:STOP_UNIT: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/stop')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:STOP_UNIT: unit {uid} not found')
@@ -139,9 +128,6 @@ async def unit_stop_handler(request: Request):
 @routes.get('/unit/{uid}/get_settings')
 async def get_settings_handler(request: Request):
     uid = request.match_info.get('uid', None)
-    if uid is None:
-        loguru.logger.warning(f'SERVER:GET_SETTINGS: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/get_settings')
 
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:GET_SETTINGS: unit {uid} not found')
@@ -159,10 +145,6 @@ async def get_settings_handler(request: Request):
 @routes.get('/unit/{uid}/set_settings')
 async def set_settings_handler(request: Request):
     uid = request.match_info.get('uid', None)
-    if uid is None:
-        loguru.logger.warning(f'SERVER:SET_SETTINGS: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/set_settings')
-
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:SET_SETTINGS: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
@@ -180,10 +162,6 @@ async def set_settings_handler(request: Request):
 @routes.post('/unit/{uid}/set_wallet_data')
 async def set_wallet_data_handler(request: Request):
     uid = request.match_info.get('uid', None)
-    if uid is None:
-        loguru.logger.warning(f'SERVER:SET_WALLET_DATA: bad request')
-        return web.Response(status=400, text='Provide `uid` parameter into URL. For example: /unit/1/set_wallet_data')
-
     if not unit_exists(uid):
         loguru.logger.warning(f'SERVER:SET_WALLET_DATA: unit {uid} not found')
         return web.Response(status=404, text=f'Unit {uid} not found')
@@ -266,3 +244,25 @@ async def add_unit_proxies_handler(request: Request):
     await add_proxies(f'./units/{uid}/proxies.txt', proxies=proxies, overwrite=overwrite)
     loguru.logger.info(f'SERVER:ADD_UNIT_PROXIES: {len(proxies)} proxies added to user {uid}')
     return web.Response()
+
+
+@routes.post('/unit/{uid}/set_collections')
+async def set_collections_handler(request: Request):
+    try:
+        collections = await request.json()
+        if not isinstance(collections, list):
+            raise ValueError
+        for el in collections:
+            if not isinstance(el, str):
+                raise ValueError
+    except ValueError:
+        loguru.logger.warning(f'SERVER:SET_COLLECTIONS: bad request')
+        return web.Response(status=400, text='`collections` must be a list of strings in json format')
+
+    uid = request.match_info.get('uid', None)
+    active_units = request.app['active_units']
+    async with aiohttp.ClientSession() as session:
+        url = f'http://localhost:{active_units[uid].port}/unit/set_collections'
+        print('server ', collections)
+        async with session.post(url, json=collections) as resp:
+            return web.Response(status=resp.status, text=await resp.text())

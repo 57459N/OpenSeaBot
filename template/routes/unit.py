@@ -117,3 +117,13 @@ async def set_settings_post(request: web.Request):
         return web.Response(status=500, text=str(e))
     loguru.logger.info(f'UNIT:SET_SETTINGS: {uid} settings updated successfully')
     return web.Response(text='Settings updated')
+
+
+@routes.post('/unit/set_collections')
+async def set_collections_post(request: web.Request):
+    uid = request.app['uid']
+    collections = await request.json()
+
+    loguru.logger.error(f'SET COLLECTIONS IS NOT IMPLEMENTED YET:\t{collections=}')
+    raise NotImplemented
+    # todo: wait for backend to set collections

@@ -20,7 +20,8 @@ async def get_user_subscription_info_by_id(uid: int) -> {'str': Any}:
                 f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/user/{uid}/get_info?token={config.BOT_API_TOKEN}') as resp:
             if resp.status == 200 and 'json' in resp.content_type:
                 return await resp.json()
-            else: return {}
+            else:
+                return {}
 
 
 async def is_user_subscribed(uid: int) -> bool:
@@ -136,6 +137,15 @@ async def add_proxies(proxies: list[str], uid: int | str | None, overwrite: bool
         loguru.logger.info(f'ADD_PROXIES: adding {len(proxies)} proxies')
         async with session.post(url, json=proxies) as resp:
             return resp.status, await resp.text()
+
+
+async def set_collections(collections: list[str], uid: int | str):
+    async with aiohttp.ClientSession(trust_env=True) as session:
+        url = f'http://{SERVER_HOST_IP}:{SERVER_HOST_PORT}/unit/{uid}/set_collections?token={config.BOT_API_TOKEN}'
+        loguru.logger.info(f'SET_COLLECTIONS: setting {len(collections)} collections for user {uid}')
+        async with session.post(url, json=collections) as resp:
+            return resp.status, await resp.text()
+
 
 
 async def get_units_status() -> dict | tuple[int, str]:

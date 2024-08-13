@@ -56,7 +56,7 @@ def get_no_sub_keyboard() -> InlineKeyboardMarkup:
 def get_support_keyboard() -> InlineKeyboardMarkup:
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="🧑‍💻 Write to support", url=config.LINK_TO_SUPPORT))
-            .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
+            .add(InlineKeyboardButton(text="❌ Close", callback_data='delete_message'))
             .as_markup())
 
 

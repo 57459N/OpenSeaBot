@@ -43,13 +43,12 @@ async def collections_set_finish_callback_handler(query: types.CallbackQuery, st
     data = await state.get_data()
     collections: list[str] | None = data.get('collections', None)
 
-    uid = query.from_user.id
-
     if collections is None or len(collections) == 0:
         await query.answer('Add at least one collection', show_alert=True)
         return
 
-    status, text = await api.send_instrument_command(uid, 'unit', 'set_collections', {'collections': collections})
+    uid = query.from_user.id
+    status, text = await api.set_collections(collections, uid)
 
     if status == 200:
         await query.message.edit_text('✅ Collections set successfully')
