@@ -56,7 +56,7 @@ def get_no_sub_keyboard() -> InlineKeyboardMarkup:
 def get_support_keyboard() -> InlineKeyboardMarkup:
     return (InlineKeyboardBuilder()
             .add(InlineKeyboardButton(text="🧑‍💻 Write to support", url=config.LINK_TO_SUPPORT))
-            .add(InlineKeyboardButton(text="↩️ Back", callback_data='delete_message'))
+            .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
             .as_markup())
 
 
@@ -140,7 +140,6 @@ def get_adding_proxies_keyboard(overwrite: bool = False):
             .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
             .adjust(1, 1)
             .as_markup())
-
 
 
 def get_givedays_type_keyboard():
@@ -231,24 +230,25 @@ def get_just_back_button_keyboard():
 def get_instruments_keyboard():
     b = InlineKeyboardBuilder()
     b.add(InlineKeyboardButton(text="FAQ", callback_data=InstrumentCallback(act='info',
-                                                                             inst='None',
-                                                                             param='None').pack()))
+                                                                            inst='None',
+                                                                            param='None').pack()))
 
     for i in INSTRUMENTS:
         b.add(InlineKeyboardButton(text=i.name, callback_data=InstrumentCallback(inst=i.name,
                                                                                  act='menu',
                                                                                  param='None').pack()))
+    b.add(InlineKeyboardButton(text="Collections", callback_data='collections_menu'))
     b.add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
 
-    b.adjust(1,2,1)
+    b.adjust(1, 2, 2, 1)
     return b.as_markup()
 
 
 def get_instrument_keyboard(instrument: Instrument):
     b = InlineKeyboardBuilder()
     b.add(InlineKeyboardButton(text="Start", callback_data=InstrumentCallback(act='start',
-                                                                                inst=instrument.server_name,
-                                                                                param='None').pack()))
+                                                                              inst=instrument.server_name,
+                                                                              param='None').pack()))
     if instrument.stopable:
         b.add(InlineKeyboardButton(text="Stop", callback_data=InstrumentCallback(act='stop',
                                                                                  inst=instrument.server_name,
@@ -311,3 +311,18 @@ def get_units_keyboard(units: dict[str, bool]):
     b.add(InlineKeyboardButton(text="❌ Close", callback_data='delete_message'))
     b.adjust(*(2 for _ in range((len(units) + 1) // 2)))
     return b.as_markup()
+
+
+def get_collections_menu_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="📁 Set Collections", callback_data='collections_set'))
+            .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
+            .adjust(1)
+             .as_markup())
+
+def get_collections_setting_keyboard():
+    return (InlineKeyboardBuilder()
+            .add(InlineKeyboardButton(text="✅ Finish", callback_data='collections_set_finish'))
+            .add(InlineKeyboardButton(text="↩️ Back", callback_data='back'))
+            .adjust(1, 1)
+            .as_markup())

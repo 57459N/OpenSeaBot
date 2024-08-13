@@ -1,19 +1,18 @@
-import asyncio
-import os.path
+import os
 import re
 
 import aiofiles
 from aiogram import Router, types, flags
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Document, File
+from aiogram.types import File
 
-from .states import AddProxiesStates
+from handlers.collections.states import CollectionsStates
 
 router = Router()
 
 
-@router.message(AddProxiesStates.list)
-async def add_proxies_message_handler(message: types.Message, state: FSMContext):
+@router.message(CollectionsStates.set_list)
+async def set_collections_message_handler(message: types.Message, state: FSMContext):
     text = message.text
 
     if text is None:
@@ -30,9 +29,9 @@ async def add_proxies_message_handler(message: types.Message, state: FSMContext)
 
     added_proxies = re.split(r'[\n ]+', text)
     data = await state.get_data()
-    proxies_list = data.get('proxies', None)
+    proxies_list = data.get('collections', None)
     if proxies_list is None:
         proxies_list = []
     proxies_list.extend(added_proxies)
     await message.delete()
-    await state.update_data(proxies=proxies_list)
+    await state.update_data(collections=proxies_list)

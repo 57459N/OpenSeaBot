@@ -19,6 +19,7 @@ from telegram_bot.handlers.add_proxies import router as add_proxies_router
 from telegram_bot.handlers.create_unit import router as create_unit_router
 from telegram_bot.handlers.init_unit import router as init_unit_router
 from telegram_bot.handlers.wallet_data import router as wallet_data_router
+from telegram_bot.handlers.collections import router as collections_router
 
 
 import config
@@ -44,6 +45,7 @@ async def main() -> None:
         create_unit_router,
         init_unit_router,
         wallet_data_router,
+        collections_router,
     )
 
     await dp.start_polling(bot)
