@@ -21,7 +21,6 @@ class Client:
         self.fetch_opensea_pro_sessions = [OpenseaProAccount(Account.create().key.hex(), [proxy]) for proxy in parse_proxies]
         self.config = settings["settings"]
 
-        self.state = None
         self.portfolio = {}
 
 
@@ -42,7 +41,7 @@ class Client:
 
 
     async def portfolio_fetcher(self) -> None:
-        while self.state:
+        while (await get_data_from_db()):
             try:
                 self.portfolio = await self.opensea_pro.get_account_portfolio()
                 logger.info(f'Portfolio fetched. Items owned: {len(self.portfolio.keys())}')
