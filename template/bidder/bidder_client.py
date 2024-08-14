@@ -264,19 +264,19 @@ class Client:
 
 
 async def work_client() -> None:
+    config = await load_data()
+    account = Client(config)
+    asyncio.create_task(account.portfolio_fetcher())
+
     while (await get_data_from_db()):
         try:
-            config = await load_data()
-            account = Client(config)
-            
             await account.opensea.login()
             await account.opensea_pro.login()
 
             tasks = [
                 account.opensea.safe_executor(
                     account.work, config["settings"]
-                ),
-                account.portfolio_fetcher()
+                )
             ]
             
             await asyncio.gather(*tasks)
