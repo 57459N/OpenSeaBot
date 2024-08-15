@@ -440,34 +440,85 @@ async def build_selling_data(
 
 
 async def get_seaport_selling_data_json(
-        typed_offer: dict,
-        signature: str
-):
-    typed_offer["message"]["zoneHash"] = "0x" + typed_offer["message"]["zoneHash"].hex()
-    typed_offer["message"]["conduitKey"] = "0x" + typed_offer["message"]["conduitKey"].hex()
+    typed_offer: dict,
+    signature: str
+) -> dict:
+    def to_hex(value):
+        return f"0x{value.hex()}"
 
-    typed_offer["message"]["offerer"] = Web3.to_checksum_address(typed_offer["message"]["offerer"])
-    typed_offer["message"]["zone"] = Web3.to_checksum_address(typed_offer["message"]["zone"])
+    def to_checksum(value):
+        return Web3.to_checksum_address(value)
 
-    typed_offer["message"]["offer"][0]["startAmount"] = str(typed_offer["message"]["offer"][0]["startAmount"])
-    typed_offer["message"]["offer"][0]["endAmount"] = str(typed_offer["message"]["offer"][0]["endAmount"])
-    typed_offer["message"]["consideration"][0]["startAmount"] = str(typed_offer["message"]["consideration"][0]["startAmount"])
-    typed_offer["message"]["consideration"][0]["endAmount"] = str(typed_offer["message"]["consideration"][0]["endAmount"])
-    typed_offer["message"]["consideration"][1]["startAmount"] = str(typed_offer["message"]["consideration"][1]["startAmount"])
-    typed_offer["message"]["consideration"][1]["endAmount"] = str(typed_offer["message"]["consideration"][1]["endAmount"])
+    def to_str(value):
+        return str(value)
 
-    typed_offer["message"]["consideration"][0]["recipient"] = Web3.to_checksum_address(typed_offer["message"]["consideration"][0]["recipient"])
+    message = typed_offer["message"]
 
-    typed_offer["message"]["startTime"] = str(typed_offer["message"]["startTime"])
-    typed_offer["message"]["endTime"] = str(typed_offer["message"]["endTime"])
-    typed_offer["message"]["salt"] = str(typed_offer["message"]["salt"])
-    typed_offer["message"]["counter"] = str(typed_offer["message"]["counter"])
+    message["zoneHash"] = to_hex(message["zoneHash"])
+    message["conduitKey"] = to_hex(message["conduitKey"])
 
-    typed_offer["message"]["offer"][0]["identifierOrCriteria"] = str(typed_offer["message"]["offer"][0]["identifierOrCriteria"])
+    message["offerer"] = to_checksum(message["offerer"])
+    message["zone"] = to_checksum(message["zone"])
+
+    offer = message["offer"][0]
+    consideration = message["consideration"]
+
+    offer["startAmount"] = to_str(offer["startAmount"])
+    offer["endAmount"] = to_str(offer["endAmount"])
+    offer["identifierOrCriteria"] = to_str(offer["identifierOrCriteria"])
+
+    for consideration_item in consideration:
+        consideration_item["startAmount"] = to_str(consideration_item["startAmount"])
+        consideration_item["endAmount"] = to_str(consideration_item["endAmount"])
+        consideration_item["recipient"] = to_checksum(consideration_item["recipient"])
+
+    message["startTime"] = to_str(message["startTime"])
+    message["endTime"] = to_str(message["endTime"])
+    message["salt"] = to_str(message["salt"])
+    message["counter"] = to_str(message["counter"])
 
     return {
-            'parameters': typed_offer["message"],
-            'protocol_address': '0x0000000000000068F116a894984e2DB1123eB395',
-            'signature': signature,
-            'chainName': 'ethereum',
-        }
+        'parameters': message,
+        'protocol_address': '0x0000000000000068F116a894984e2DB1123eB395',
+        'signature': signature,
+        'chainName': 'ethereum',
+    }
+
+async def fetch_pro_current_prices(profit: float, current_prices: list, my_current_orders: dict):
+    change_items = []
+
+    for item in current_prices:
+        try:
+            slug = item.get("slug")
+            my_order_price = float(my_current_orders.get(slug, 0))
+
+            best_bid = item.get("best_bid", {})
+            best_bid_price = float(best_bid.get("price", 0) / 10**18)
+
+            orders = item.get("orders", [])
+            second_bid_price = float(min(orders, key=lambda x: x.get("price", float('inf'))).get("price", 0) / 10**18)
+
+            floor_price = float(item.get("floor_price", 0) / 10**18)
+
+            if my_order_price < best_bid_price:
+                if floor_price * (1 - profit) > best_bid_price + 0.001:
+                    change_items.append({
+                        "name": slug, 
+                        "price": round(best_bid_price + 0.0001, 4), 
+                        "address": item.get("address")
+                    })
+            elif best_bid_price == my_order_price:
+                if second_bid_price + 0.001 < my_order_price:
+                    if floor_price * (1 - profit) > second_bid_price + 0.001:
+                        change_items.append({
+                            "name": slug, 
+                            "price": round(second_bid_price + 0.0001, 4), 
+                            "address": item.get("address")
+                        })
+
+        except (TypeError, ValueError) as error:
+            print(f'fetch_pro_current_prices: Invalid data for {slug} - {error}')
+        except Exception as error:
+            print(f'fetch_pro_current_prices: Error processing {slug} - {error}')
+    
+    return change_items

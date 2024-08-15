@@ -3,6 +3,8 @@ import json
 import hashlib
 import cryptography
 import traceback
+from loguru import logger
+import asyncio
 
 from cryptography.fernet import Fernet
 
@@ -52,3 +54,28 @@ async def decrypt_secret_key(filepath: str, password: str) -> str:
         return str(error)
 
 
+def retry(
+        infinity: bool = False, max_retries: int = 5,
+        timing: float = 1,
+        custom_message: str = "Random error:",
+        catch_exception: bool = False
+):
+    if infinity: max_retries = float('inf')
+    
+    def retry_decorator(func):
+        async def _wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as error:
+                    if catch_exception:
+                        logger.exception(error)
+                    else:
+                        logger.error(f'{custom_message} | Attempt {attempt + 1} | {error}')
+                    
+                    await asyncio.sleep(timing)
+            raise Exception(f"Retry attempts exceeded {func.__name__}")
+
+        return _wrapper
+    
+    return retry_decorator
