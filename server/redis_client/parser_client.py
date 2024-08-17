@@ -1,6 +1,6 @@
-from redis_client.redis_client import RedisManager
+from server.redis_client.redis_client import RedisManager
 import asyncio
-from redis_client.opensea.client import OpenseaAccount
+from template.bidder.opensea.client import OpenseaAccount
 from loguru import logger
 from eth_account import Account
 
@@ -58,7 +58,6 @@ class OpenseaParser(ClientsManager):
         except Exception as error:
             logger.error(error)
         
-
     async def start_parsing(self, item_id: str):
         if item_id in self.tasks:
             logger.info(f"Parsing for {item_id} is already running.")

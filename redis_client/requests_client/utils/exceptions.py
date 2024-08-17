@@ -1,3 +1,0 @@
-
-class BadStatusCode(Exception):
-    pass
