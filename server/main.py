@@ -15,6 +15,7 @@ from routes.server import routes as server_routes
 from routes.unit import routes as unit_routes
 from routes.user import routes as user_routes
 from routes.scanner import routes as scanner_routes
+from routes.price_parser import routes as price_parser_routes
 
 
 async def daily_ctx(app: web.Application):
@@ -65,6 +66,7 @@ def main():
     app.add_routes(user_routes)
     app.add_routes(unit_routes)
     app.add_routes(scanner_routes)
+    app.add_routes(price_parser_routes)
 
     web.run_app(app, port=port)
 
