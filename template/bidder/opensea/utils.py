@@ -1,4 +1,5 @@
 from datetime import datetime
+from utils.database import get_items_by_names
 
 
 async def get_format_timestamp(_time: int) -> str:
@@ -27,13 +28,17 @@ async def get_format_typed_message(client_message: dict) -> dict:
 async def fetch_current_prices(profit: float, current_prices: list, my_current_orders: dict):
     change_items = []
 
+    items_market_data = await get_items_by_names([i.get("slug", "") for i in current_prices])
+
     for item in current_prices:
         try:
             slug = item.get("slug")
             my_order_price = float(my_current_orders.get(slug, 0))
-            best_bid_price = item.get("min_bid", 0)
-            floor_price = item.get("floor_price", 0)
-            sales_ratio_percent = item.get("sales_ratio_percent", 0)
+            item_market_data = items_market_data[slug]
+
+            best_bid_price = current_prices.get("min_bid", 0)
+            floor_price = item_market_data.get("floor_price", 0)
+            sales_ratio_percent = item_market_data.get("sales_ratio_percent", 0)
 
             if sales_ratio_percent > 60:
                 potential_new_price = round(best_bid_price + 0.0001, 4)
@@ -42,7 +47,7 @@ async def fetch_current_prices(profit: float, current_prices: list, my_current_o
                         {
                             "name": slug,
                             "price": potential_new_price,
-                            "address": item.get("address")
+                            "address": item_market_data.get("address")
                         }
                     )
 

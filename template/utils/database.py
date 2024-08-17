@@ -81,6 +81,39 @@ async def get_item_by_name(item_name: str) -> dict:
             return result[0]
         else:
             return None
+        
+async def get_items_by_names(item_names: list) -> dict:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        placeholders = ','.join('?' * len(item_names))
+        query = f'''
+            SELECT i.item_name, i.price, i.address, i.week_volume, i.floor, i.owned_delta, i.sales_ratio_percent,
+                   f.sellerFees, f.marketplaceFees
+            FROM items i
+            JOIN fees f ON i.id = f.item_id
+            WHERE i.item_name IN ({placeholders})
+        '''
+        cursor = await db.execute(query, item_names)
+        rows = await cursor.fetchall()
+
+        result = {}
+        for row in rows:
+            item_data = {
+                "price": row[1],
+                "details": {
+                    "address": row[2],
+                    "fees": {
+                        "sellerFees": row[7],
+                        "marketplaceFees": row[8]
+                    },
+                    "week_volume": row[3],
+                    "floor": row[4],
+                    "owned_delta": row[5]
+                },
+                "sales_ratio_percent": row[6]
+            }
+            result[row[0]] = item_data
+        
+        return result
 
 
 async def initialize_database():
