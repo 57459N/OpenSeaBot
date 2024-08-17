@@ -6,6 +6,7 @@ from utils.database import *
 import numpy as np
 import json
 from collections import defaultdict
+from utils.redis_client import RedisManager
 
 import traceback
 PARAMS = {
@@ -193,7 +194,7 @@ class OpenseaProParser(RequestsClient):
         return result
     
 
-async def collections_update_handler() -> None:
+async def collections_update_handler(redis_client) -> None:
     while (await get_data_from_db()):
         try:
             settings = await get_settings_data_from_db()
@@ -208,6 +209,7 @@ async def collections_update_handler() -> None:
                 offer_difference_percent=parse_settings["offer_difference_percent"]
             )
 
+            await redis_client.submit_items(collections)
             await update_settings_database({"collections": collections})
 
             logger.success(f'Updated collections list! New len: {len(collections)}')

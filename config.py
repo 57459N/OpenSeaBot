@@ -1,3 +1,6 @@
+from redis_client.parser_client import RedisParser
+from eth_account import Account
+
 BOT_API_TOKEN = "7267987681:AAH0Aw5u_zsnNUUsdl_Bhb1M_dttyjANPwk"
 
 LINK_TO_WEBSITE = "https://link2website.example"
@@ -56,3 +59,9 @@ RPC_CONFIG = {
         'tokens': []
     },
 }
+
+
+with open(".parse_proxies") as file:
+    proxies = [i.replace("\n", "") for i in file.readlines()]
+    
+redis_client = RedisParser(path_to_proxies=".parse_proxies")
