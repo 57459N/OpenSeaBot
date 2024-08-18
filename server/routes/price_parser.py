@@ -37,7 +37,7 @@ async def get_prices_handler(request: Request):
             if not isinstance(el, str):
                 raise ValueError
     except ValueError:
-        loguru.logger.warning(f'PRICE_PARSER:ADD_COLLECTIONS: bad request')
+        loguru.logger.warning(f'PRICE_PARSER:GET_PRICES: bad request')
         return web.Response(status=400, text='`collections` must be a list of strings in json format')
 
     prices = {slug: price_parser.get_item_value(slug) for slug in collections}
