@@ -4,7 +4,7 @@ from bidder.opensea.client import OpenseaAccount
 from bidder.opensea_pro.client import OpenseaProAccount
 from loguru import logger
 from utils.database import get_data_from_db, get_settings_data_from_db
-from utils.redis_client import RedisManager
+from utils.price_manager import price_requests
 from bidder.opensea.utils import fetch_current_prices
 from bidder.opensea_pro.utils import fetch_pro_current_prices
 from utils.utils import retry
@@ -48,14 +48,12 @@ class BidderClient(ClientSessions):
         super().__init__(private_key, proxies, config)
         self.handlers_status = False
         self.last_fetch_from_opensea_pro = 0
-        self.redis_client = RedisManager()
         self.current_orders = {}
 
         self.items_in_batch = 10
 
     async def fetch_market_data(self, collections: list, pro: bool, profit: float) -> list:
-        tasks = [self.redis_client.get_item_value(item) for item in collections]
-        response = [resp for resp in await asyncio.gather(*tasks) if resp]
+        response = await price_requests.get_items_values(*collections)
         fetch_function = fetch_pro_current_prices if pro else fetch_current_prices
         return await fetch_function(profit, response, self.current_orders)
 

@@ -1,14 +1,11 @@
-
 from requests_client.client import RequestsClient
-import asyncio
 from loguru import logger
 from utils.database import *
 import numpy as np
-import json
-from collections import defaultdict
-from utils.redis_client import RedisManager
+from utils.price_manager import price_requests
 
 import traceback
+
 PARAMS = {
     'fields[name]': '1',
     'fields[marketStats]': '1',
@@ -88,16 +85,14 @@ FETCH_FLOOR_PRICE = {
 }
 
 
-
-
 class OpenseaProParser(RequestsClient):
     def __init__(self, proxy: list) -> None:
         super().__init__(proxy)
 
     async def fetch_pages(
-            self, 
-            offset: int = 0, 
-            pages: int = 5, 
+            self,
+            offset: int = 0,
+            pages: int = 5,
             limit: int = 50,
             min_price: float = 0.1,
             max_price: float = 2
@@ -158,14 +153,13 @@ class OpenseaProParser(RequestsClient):
                     result['data'].append(i)
 
                 logger.success(f'Fethed page with limit: {limit} offset: {offset}')
-                
+
             except Exception as error:
                 logger.error(f'Failed to fetch page! limit: {limit} | offset: {offset} | {error}')
                 await asyncio.sleep(5)
 
         return result
 
-    
     async def fetch_collections(
             self,
             min_price: float,
@@ -187,14 +181,15 @@ class OpenseaProParser(RequestsClient):
             if min_price < _item["floor_price"] < max_price:
                 if min_one_day_sellings < _item["one_day_sales"]:
                     if min_one_day_volume < _item["one_day_volume"]:
-                        percentage_difference = ((_item["floor_price"] - _item["top_offer_price"]) / _item["floor_price"]) * 100
+                        percentage_difference = ((_item["floor_price"] - _item["top_offer_price"]) / _item[
+                            "floor_price"]) * 100
                         if offer_difference_percent < percentage_difference:
                             result.append(item["slug"])
-        
-        return result
-    
 
-async def collections_update_handler(redis_client) -> None:
+        return result
+
+
+async def collections_update_handler() -> None:
     while (await get_data_from_db()):
         try:
             settings = await get_settings_data_from_db()
@@ -209,18 +204,16 @@ async def collections_update_handler(redis_client) -> None:
                 offer_difference_percent=parse_settings["offer_difference_percent"]
             )
 
-            await redis_client.submit_items(collections)
+            await price_requests.submit_items(collections)
             await update_settings_database({"collections": collections})
 
             logger.success(f'Updated collections list! New len: {len(collections)}')
             await asyncio.sleep(60)
-            
+
         except Exception as error:
             logger.debug(parse_settings)
             print(traceback.format_exc())
             logger.error(f'collections_update_handler: {error}')
-        
-
 
 
 ####################### REAL PRICES PARSER #######################
@@ -243,34 +236,34 @@ class SalesParser(RequestsClient):
         if len(prices) == 0:
             return 0
         prices = np.array(prices)
-        
+
         Q1 = np.percentile(prices, 25)
         Q3 = np.percentile(prices, 75)
-        
+
         IQR = Q3 - Q1
-        
+
         lower_bound = Q1 - 1.5 * IQR
         upper_bound = Q3 + 1.5 * IQR
-        
+
         filtered_prices = prices[(prices >= lower_bound) & (prices <= upper_bound)]
 
         return np.median(filtered_prices)
-    
+
     @staticmethod
     async def calculate_sales_ratio(sales_data: list):
         eth_sales_total = 0
         other_asset_sales = 0
-        
+
         for sale in sales_data:
             base_asset = sale["baseAsset"]
-            
+
             if base_asset == "0x0000000000000000000000000000000000000000":
                 eth_sales_total += 1
             else:
                 other_asset_sales += 1
-        
+
         return eth_sales_total / ((eth_sales_total + other_asset_sales) / 100)
-    
+
     async def fetch_details(self, slug: str) -> dict:
         response = (await self.request(
             "get",
@@ -287,17 +280,16 @@ class SalesParser(RequestsClient):
         )["data"]
 
         floor_price = min(items_response, key=lambda x: x["currentEthPrice"])["currentEthPrice"]
-        #logger.debug(f'Floor price for: {slug}: {floor_price / 10**18}')
-
+        # logger.debug(f'Floor price for: {slug}: {floor_price / 10**18}')
 
         return {
             "address": response["addresses"][0]["address"],
             "fees": response["fees"]["openSea"],
             "week_volume": response["sevenDayVolume"],
-            "floor": floor_price / 10**18,
+            "floor": floor_price / 10 ** 18,
             "owned_delta": response["stats"]["total_supply"] / response["stats"]["num_owners"]
         }
-        
+
     async def fetch_item(self, slug: str, duration: str) -> list:
         """
         durations: 24_hours, 7_days, 30_days, 1_hour, 5_mins
@@ -309,7 +301,7 @@ class SalesParser(RequestsClient):
             params={"duration": duration}
         )
 
-        price = (await self.calculate_fair_market_price([data["ethPrice"] for data in response["data"]])) / 10**18
+        price = (await self.calculate_fair_market_price([data["ethPrice"] for data in response["data"]])) / 10 ** 18
         details_data = await self.safe_executor(self.fetch_details, slug)
         sales_ratio_percent = await self.calculate_sales_ratio(response["data"])
 
@@ -325,7 +317,7 @@ class SalesParser(RequestsClient):
             "details": details_data,
             "sales_ratio_percent": sales_ratio_percent
         }
-    
+
     async def fetch_collections(self, slugs: list, duration: str) -> list:
         tasks = [
             self.safe_executor(
@@ -339,9 +331,9 @@ class SalesParser(RequestsClient):
             if response:
                 if response["details"]:
                     await add_or_update_item(response)
-        
+
         return fetch_responses
-    
+
 
 async def collections_prices_handler() -> None:
     while (await get_data_from_db()):
@@ -365,7 +357,7 @@ async def collections_prices_handler() -> None:
             logger.success(f'[collections_prices_handler] items in db was updated. Items: {len(response)} :>')
 
             await asyncio.sleep(60)
-            
+
         except Exception as error:
             print(traceback.format_exc())
             logger.error(f'collections_update_handler: {error}')

@@ -11,12 +11,12 @@ from utils.utils import load_data
 from sell.sell_handler import SellAccount
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.parent))
-from config import BOT_API_TOKEN, RPC_CONFIG, redis_client
+from config import BOT_API_TOKEN, RPC_CONFIG
 
 
 async def start_program(app=None):
     # todo: UNCOMMENT ON PRODUCTION
-    asyncio.create_task(collections_update_handler(redis_client))
+    asyncio.create_task(collections_update_handler())
     asyncio.create_task(collections_prices_handler())
 
     account_data = await load_data()
@@ -50,7 +50,7 @@ async def start_program(app=None):
 
     asyncio.create_task(
         BidderClient(
-            secret_key=account_data["private_key"], 
+            private_key=account_data["private_key"],
             proxies=main_proxies, 
             config=account_data["settings"]
         ).start()

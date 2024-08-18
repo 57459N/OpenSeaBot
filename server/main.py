@@ -2,6 +2,7 @@ import asyncio
 import time
 from contextlib import suppress
 
+import aiohttp
 from aiohttp import web
 import sys
 import os
@@ -15,7 +16,6 @@ from routes.server import routes as server_routes
 from routes.unit import routes as unit_routes
 from routes.user import routes as user_routes
 from routes.scanner import routes as scanner_routes
-from routes.price_parser import routes as price_parser_routes
 
 
 async def daily_ctx(app: web.Application):
@@ -35,7 +35,7 @@ async def auth_middleware(request: Request, handler):
         return await handler(request)
 
 
-def main():
+async def main():
     # init all units
     active_units: dict[str, Unit] = dict()
 
@@ -62,14 +62,23 @@ def main():
 
     app.cleanup_ctx.append(daily_ctx)
 
+    from routes.price_parser import routes as price_parser_routes
+
     app.add_routes(server_routes)
     app.add_routes(user_routes)
     app.add_routes(unit_routes)
     app.add_routes(scanner_routes)
     app.add_routes(price_parser_routes)
 
-    web.run_app(app, port=port)
+    # web.run_app(app, port=port)
+
+    runner = aiohttp.web.AppRunner(app)
+    await runner.setup()
+    site = aiohttp.web.TCPSite(runner, port=port)
+    await site.start()
+
+    await asyncio.Event().wait()
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

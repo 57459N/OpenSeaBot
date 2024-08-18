@@ -1,5 +1,3 @@
-import os
-
 import loguru
 from aiohttp import web
 from aiohttp.web_request import Request
@@ -21,7 +19,12 @@ async def add_collections_handler(request: Request):
         loguru.logger.warning(f'PRICE_PARSER:ADD_COLLECTIONS: bad request')
         return web.Response(status=400, text='`collections` must be a list of strings in json format')
 
-    await price_parser.submit_items(*collections)
+    try:
+        await price_parser.submit_items(*collections)
+        return web.Response()
+    except Exception as e:
+        loguru.logger.error(f'PRICE_PARSER:ADD_COLLECTIONS: {e}')
+        return web.Response(status=500, text=str(e))
 
 
 @routes.post('/price_parser/get_prices')
