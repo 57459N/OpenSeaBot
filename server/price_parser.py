@@ -1,5 +1,5 @@
 import asyncio
-from template.bidder.opensea.client import OpenseaAccount
+from server.opensea.client import OpenseaAccount
 from loguru import logger
 from eth_account import Account
 from typing import Union, Dict, Any
@@ -48,8 +48,7 @@ class OpenseaParser(ClientsManager):
             client = self.get()
             price = await self.fetch_price(item_id, client)
             if price:
-                logger.success(f'{item_id}:{price}')
-                self.set_item_value(item_id, {"slug": item_id, "min_bid": price})
+                self.set_item_value(item_id, price)
 
     async def fetch_price(self, item_id: str, client: OpenseaAccount) -> int:
         try:
@@ -126,4 +125,4 @@ class InMemoryParser(OpenseaParser):
 
 
 
-parser = InMemoryParser()
+parser = InMemoryParser(path_to_proxies=".parse_proxies")

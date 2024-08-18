@@ -1,16 +1,15 @@
+from requests_client.client import RequestsClient
 from eth_account import Account
-from bidder.opensea.types.api_types import Queries, Endpoints, PaymentAssets, Offer, Query
+from opensea.types.api_types import Queries, Endpoints, PaymentAssets, Offer, Query
 from eth_account.messages import encode_defunct, encode_structured_data
 from time import time
 import json
-from bidder.opensea.utils import *
+from opensea.utils import *
 from random import choice
 import asyncio
 from loguru import logger
-from requests_client.client import RequestsClient
 
 from traceback import format_exc
-from utils.database import get_item_by_name
 
 
 class OpenseaAccount(RequestsClient):
@@ -80,6 +79,7 @@ class OpenseaAccount(RequestsClient):
         if "data" in response.keys():
             self.session_cookies.update(await self.get_cookies())
             self.cookies = self.session.cookie_jar
+            logger.success(f'Logged in to {self.address} session')
             return True
         else:
             raise Exception(f"Failed login to OpenSea, response: {response}")
@@ -204,14 +204,9 @@ class OpenseaAccount(RequestsClient):
             await self.login()
             return await self.get_collection_best_offer(collection_slug)
 
-        database_data = await get_item_by_name(collection_slug)
-
         return {
             "min_bid": min_bid,
-            "floor_price": database_data["price"],
             "slug": collection_slug,
-            "address": database_data["details"]["address"],
-            "sales_ratio_percent": database_data["sales_ratio_percent"]
         }
 
     async def get_collection_offers(self, contract_address: str) -> float:

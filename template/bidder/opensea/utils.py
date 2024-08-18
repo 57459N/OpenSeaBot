@@ -25,19 +25,21 @@ async def get_format_typed_message(client_message: dict) -> dict:
         
     return client_message
 
-async def fetch_current_prices(profit: float, current_prices: list, my_current_orders: dict):
+async def fetch_current_prices(profit: float, current_prices: dict, my_current_orders: dict):
     change_items = []
 
-    items_market_data = await get_items_by_names([i.get("slug", "") for i in current_prices])
+    items_market_data = await get_items_by_names(list(current_prices.keys()))
 
-    for item in current_prices:
+    for slug, price in current_prices.items():
+        slug = slug.replace("_pro", "")
         try:
-            slug = item.get("slug")
             my_order_price = float(my_current_orders.get(slug, 0))
             item_market_data = items_market_data[slug]
 
-            best_bid_price = current_prices.get("min_bid", 0)
-            floor_price = item_market_data.get("floor_price", 0)
+            if not price: best_bid_price = 0
+            else: best_bid_price = price
+            
+            floor_price = item_market_data["details"].get("floor", 0)
             sales_ratio_percent = item_market_data.get("sales_ratio_percent", 0)
 
             if sales_ratio_percent > 60:
@@ -47,13 +49,13 @@ async def fetch_current_prices(profit: float, current_prices: list, my_current_o
                         {
                             "name": slug,
                             "price": potential_new_price,
-                            "address": item_market_data.get("address")
+                            "address": item_market_data["details"].get("address")
                         }
                     )
 
         except (TypeError, ValueError) as error:
-            print(f'fetch_current_prices. Invalid data: {item} - {error}')
+            print(f'fetch_current_prices. Invalid data: {slug} - {error}')
         except Exception as error:
-            print(f'fetch_current_prices: {item} - {error}')
+            print(f'fetch_current_prices: {slug} - {error}')
         
     return change_items

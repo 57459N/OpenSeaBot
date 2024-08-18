@@ -53,8 +53,10 @@ class BidderClient(ClientSessions):
         self.items_in_batch = 10
 
     async def fetch_market_data(self, collections: list, pro: bool, profit: float) -> list:
+
+        collections  = [i.replace("_pro", "") for i in collections]# fastfix
         response = await price_requests.get_items_values(*collections)
-        fetch_function = fetch_pro_current_prices if pro else fetch_current_prices
+        fetch_function = fetch_current_prices if pro else fetch_current_prices
         return await fetch_function(profit, response, self.current_orders)
 
     async def process_batch_orders(self, change_list: list, close_data: dict) -> None:

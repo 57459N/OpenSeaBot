@@ -204,7 +204,7 @@ async def collections_update_handler() -> None:
                 offer_difference_percent=parse_settings["offer_difference_percent"]
             )
 
-            await price_requests.submit_items(collections)
+            await price_requests.submit_items(*collections)
             await update_settings_database({"collections": collections})
 
             logger.success(f'Updated collections list! New len: {len(collections)}')
