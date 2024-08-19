@@ -62,26 +62,27 @@ class BidderClient(ClientSessions):
     async def process_batch_orders(self, change_list: list, close_data: dict) -> None:
         last_changed_time = 0
         closed_items = False
-        logger.debug(f'Have change list for: {len(change_list)} items')
+        if len(change_list) > 0:
+            logger.debug(f'Have change list for: {len(change_list)} items')
 
         while change_list:
             if time.time() > last_changed_time + 1:
-                tasks = []
                 for _ in range(min(self.items_in_batch, len(change_list))):
                     work_item = change_list.pop()
-                    tasks.append(
+                    
+                    asyncio.create_task(
                         self.opensea.safe_executor(
                             self.opensea_pro.seaport_offer, 
                             work_item["name"], 0.5, work_item["address"], int(work_item["price"] * 1e18)
                         )
                     )
+                    
                     if not closed_items:
-                        tasks.append(self.opensea.safe_executor(self.opensea.close_collection_worst_orders, close_data))
+                        asyncio.create_task(self.opensea.safe_executor(self.opensea.close_collection_worst_orders, close_data))
                         closed_items = True
                     self.current_orders[work_item["name"]] = work_item["price"]
 
                 last_changed_time = time.time()
-                await asyncio.gather(*tasks)
                 logger.success('Processed the batch')
 
     async def get_change_list(self, pro: bool = False) -> list:

@@ -25,7 +25,6 @@ class OpenseaAccount(RequestsClient):
             return await function(*args, **kwargs)
         except Exception as error:
             logger.error(f'Error while processing safe executor: {error}')
-            print(format_exc())
 
     async def sign_message(self, message, _type: str = "stringMessage") -> str:
         if _type == "stringMessage":
@@ -36,7 +35,7 @@ class OpenseaAccount(RequestsClient):
         return self.account.sign_message(message).signature.hex()
 
     async def _get_login_signature_message(self) -> str:
-        response = await self.send_request(Queries.get_login_message, {'address': self.address.lower()})
+        response = await self.send_request(Queries.get_login_message, {'address': self.address.lower()}, timeout=3)
         return response["data"]["auth"]["loginMessage"]
 
     async def _get_create_offer_signature_message(self, offer: Offer, closed_time: int) -> dict:
@@ -79,7 +78,7 @@ class OpenseaAccount(RequestsClient):
         if "data" in response.keys():
             self.session_cookies.update(await self.get_cookies())
             self.cookies = self.session.cookie_jar
-            logger.success(f'Logged in to {self.address} session')
+            #logger.success(f'Logged in to {self.address} session')
             return True
         else:
             raise Exception(f"Failed login to OpenSea, response: {response}")
@@ -200,7 +199,7 @@ class OpenseaAccount(RequestsClient):
                     response["data"]["collection"]["collectionOffers"]["edges"][0]["node"]["perUnitPriceType"]["unit"]
                 )
         except:
-            logger.error(f'Session is dead, will make relogin')
+            #logger.error(f'Session is dead, will make relogin')
             await self.login()
             return await self.get_collection_best_offer(collection_slug)
 
@@ -271,7 +270,7 @@ class OpenseaAccount(RequestsClient):
     async def get_all_orders(self) -> None:
         pass
 
-    async def send_request(self, query: Query, variables: dict, without_response: bool = False) -> dict:
+    async def send_request(self, query: Query, variables: dict, without_response: bool = False, timeout: int = 1) -> dict:
         kwargs = {
             "json": {
                 'id': query.id,
@@ -283,7 +282,8 @@ class OpenseaAccount(RequestsClient):
                 "x-auth-address": self.address.lower(),
                 'x-kl-saas-ajax-request': 'Ajax_Request',
                 'x-app-id': 'opensea-web'
-            }
+            },
+            "timeout": timeout
         }
         if without_response:
             response = await self.request_without_response("post", Endpoints.api_graphql, **kwargs)
