@@ -9,9 +9,12 @@ import config
 
 
 class PriceRequests:
+    def __init__(self):
+        self.server_url = f'http://{config.SERVER_HOST_IP}:{config.SERVER_HOST_PORT}/price_parser'
+
     async def get_items_values(self, *slugs: str) -> Union[Dict[str, Any], float, str, None]:
-        async with aiohttp.ClientSession(f'http://{config.SERVER_HOST_IP}:{config.SERVER_HOST_PORT}') as s:
-            async with s.post(f'/price_parser/get_prices?token={config.BOT_API_TOKEN}', json=slugs) as r:
+        async with aiohttp.ClientSession() as s:
+            async with s.post(f'{self.server_url}/get_prices?token={config.BOT_API_TOKEN}', json=slugs) as r:
                 try:
                     return await r.json()
                 except Exception as e:
@@ -19,8 +22,8 @@ class PriceRequests:
                     return {}
 
     async def submit_items(self, *slugs: str) -> None:
-        async with aiohttp.ClientSession(f'http://{config.SERVER_HOST_IP}:{config.SERVER_HOST_PORT}') as s:
-            await s.post(f'/price_parser/add_collections?token={config.BOT_API_TOKEN}', json=slugs)
+        async with aiohttp.ClientSession() as s:
+            await s.post(f'{self.server_url}/add_collections?token={config.BOT_API_TOKEN}', json=slugs)
 
 
 price_requests = PriceRequests()
