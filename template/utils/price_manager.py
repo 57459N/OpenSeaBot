@@ -1,33 +1,42 @@
+import asyncio
+import json
 import pathlib
 import sys
-import aiohttp
 import loguru
 from typing import Union, Dict, Any
-import threading
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent.parent.parent))
 import config
 
 
 class PriceRequests:
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.server_url = f'http://{config.SERVER_HOST_IP}:{config.SERVER_HOST_PORT}/price_parser'
-
     async def get_items_values(self, *slugs: str) -> Union[Dict[str, Any], float, str, None]:
-        with self.lock:
-            async with aiohttp.ClientSession(trust_env=True) as s:
-                async with s.post(f'{self.server_url}/get_prices?token={config.BOT_API_TOKEN}', json=slugs) as r:
-                    try:
-                        return await r.json()
-                    except Exception as e:
-                        loguru.logger.error(f'Error while requesting items prices from server\n{e}')
-                        return {}
+        resp = await self.send_command('get_prices', slugs)
+        return resp.get('prices')
 
     async def submit_items(self, *slugs: str) -> None:
-        with self.lock:
-            async with aiohttp.ClientSession(trust_env=True) as s:
-                await s.post(f'{self.server_url}/add_collections?token={config.BOT_API_TOKEN}', json=slugs)
+        await self.send_command('add_collections', slugs)
+
+    async def send_command(self, command: str, items: [str]):
+        writer = None
+        try:
+            reader, writer = await asyncio.open_connection(config.PRICE_PARSER_IP, config.PRICE_PARSER_PORT)
+            request = {"command": command, "items": items}
+            writer.write(json.dumps(request).encode())
+            data = await reader.read(2048)
+            resp = json.loads(data.decode())
+
+            if resp.get('status') == 'error':
+                loguru.logger.error(f'Error from price parser server: {resp.get("message")}')
+                raise Exception(resp.get('message'))
+
+            return resp
+        except Exception as e:
+            loguru.logger.error(f'PriceRequests: {e}')
+        finally:
+            if writer:
+                writer.close()
+                await writer.wait_closed()
 
 
 price_requests = PriceRequests()

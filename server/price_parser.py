@@ -121,8 +121,3 @@ class InMemoryParser(OpenseaParser):
 
         for i in item_slugs:
             await self.add_item(i)
-
-
-
-
-parser = InMemoryParser(path_to_proxies=".parse_proxies")

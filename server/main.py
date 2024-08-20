@@ -7,6 +7,10 @@ from aiohttp import web
 import sys
 import os
 
+import config
+from price_parser import InMemoryParser
+from price_parser_connector import PriceParserServer
+
 sys.path.append(os.getcwd())
 
 from aiohttp.web_request import Request
@@ -48,11 +52,11 @@ async def main():
         pass
 
     time.sleep(5)
-    port = 8887
     if len(sys.argv) == 2:
         port = int(sys.argv[1])
     else:
         print(f'To specify another port use `{sys.argv[0]} <port>`')
+        sys.exit(-1)
 
     # start server
     app = web.Application(middlewares=[auth_middleware])
@@ -62,13 +66,10 @@ async def main():
 
     app.cleanup_ctx.append(daily_ctx)
 
-    from routes.price_parser import routes as price_parser_routes
-
     app.add_routes(server_routes)
     app.add_routes(user_routes)
     app.add_routes(unit_routes)
     app.add_routes(scanner_routes)
-    app.add_routes(price_parser_routes)
 
     # web.run_app(app, port=port)
 
@@ -80,5 +81,15 @@ async def main():
     await asyncio.Event().wait()
 
 
+async def run():
+    parser = InMemoryParser(path_to_proxies=".parse_proxies")
+    price_parser_server = PriceParserServer(parser, port=config.PRICE_PARSER_PORT, host=config.PRICE_PARSER_IP)
+
+    await asyncio.gather(
+        main(),
+        price_parser_server.start_server(),
+    )
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(run())
