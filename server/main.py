@@ -8,8 +8,7 @@ import sys
 import os
 
 import config
-from price_parser import InMemoryParser
-from price_parser_connector import PriceParserServer
+from price_parser import InMemoryParser, PriceParserServer
 
 sys.path.append(os.getcwd())
 

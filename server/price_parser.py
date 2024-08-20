@@ -1,4 +1,6 @@
 import asyncio
+import json
+
 from server.opensea.client import OpenseaAccount
 from loguru import logger
 from eth_account import Account
@@ -121,3 +123,41 @@ class InMemoryParser(OpenseaParser):
 
         for i in item_slugs:
             await self.add_item(i)
+
+
+class PriceParserServer:
+    def __init__(self, price_parser: InMemoryParser, port: int, host: str = '127.0.0.1'):
+        self.host = host
+        self.port = port
+        self.price_parser = price_parser
+
+    async def handle_client(self, reader, writer):
+        try:
+            data = await reader.read(2048)
+            request = json.loads(data.decode())
+
+            command = request.get('command')
+            items = request.get('items')
+
+            response = {"status": "success"}
+            match command:
+                case 'add_collections':
+                    await self.price_parser.submit_items(*items)
+                case 'get_prices':
+                    prices = {i: self.price_parser.get_item_value(i) for i in items}
+                    response['prices'] = prices
+                case _:
+                    response = {"status": "error", "message": "Unknown command."}
+
+            writer.write(json.dumps(response).encode())
+            await writer.drain()
+        except Exception as e:
+            error_response = {"status": "error", "message": str(e)}
+            writer.write(json.dumps(error_response).encode())
+            await writer.drain()
+        finally:
+            writer.close()
+
+    async def start_server(self):
+        async with await asyncio.start_server(self.handle_client, self.host, self.port) as server:
+            await server.serve_forever()
