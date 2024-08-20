@@ -152,8 +152,6 @@ class OpenseaProParser(RequestsClient):
                 for i in response["data"]:
                     result['data'].append(i)
 
-                logger.success(f'Fethed page with limit: {limit} offset: {offset}')
-
             except Exception as error:
                 logger.error(f'Failed to fetch page! limit: {limit} | offset: {offset} | {error}')
                 await asyncio.sleep(5)
@@ -211,7 +209,6 @@ async def collections_update_handler() -> None:
             await asyncio.sleep(60)
 
         except Exception as error:
-            logger.debug(parse_settings)
             print(traceback.format_exc())
             logger.error(f'collections_update_handler: {error}')
 
@@ -305,15 +302,13 @@ class SalesParser(RequestsClient):
         details_data = await self.safe_executor(self.fetch_details, slug)
         sales_ratio_percent = await self.calculate_sales_ratio(response["data"])
 
-        logger.debug(f'[{slug}] sales ratio: {sales_ratio_percent}%')
-
         if details_data:
             if details_data["floor"] < price:
                 price = details_data["floor"]
 
         return {
             "item": slug,
-            "price": round(price, 5),
+            "price": round(price, 5), # is main price
             "details": details_data,
             "sales_ratio_percent": sales_ratio_percent
         }

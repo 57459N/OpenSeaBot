@@ -69,7 +69,7 @@ def retry(
                     return await func(*args, **kwargs)
                 except Exception as error:
                     if catch_exception:
-                        logger.exception(error)
+                        logger.error(error)
                     else:
                         logger.error(f'{custom_message} | Attempt {attempt + 1} | {error}')
                     

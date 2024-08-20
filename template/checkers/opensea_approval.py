@@ -63,11 +63,9 @@ class WorkAccount(TelegramLogger):
             tx_hash = (await self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)).hex()
             self.last_block_data = (current_block, True)
 
-            message = f"""
-<b>❗️New action❗️</b>
+            message = f"""<b>❗️New action❗️</b>
 
-<i>Deposit {round(deposit_amount / 10**18, 4)} eth to WETH | <a href='https://etherscan.io/tx/{tx_hash}'>Etherscan</a></i>
-"""
+<i>Deposit {round(deposit_amount / 10**18, 4)} eth to WETH | <a href='https://etherscan.io/tx/{tx_hash}'>Etherscan</a></i>"""
 
             asyncio.create_task(self.send_message(message))
             await asyncio.sleep(120)

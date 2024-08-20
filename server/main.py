@@ -1,4 +1,5 @@
 import asyncio
+import pathlib
 import time
 from contextlib import suppress
 
@@ -7,6 +8,7 @@ from aiohttp import web
 import sys
 import os
 
+sys.path.append(str(pathlib.Path(__file__).parent.parent))
 import config
 from price_parser import InMemoryParser, PriceParserServer
 

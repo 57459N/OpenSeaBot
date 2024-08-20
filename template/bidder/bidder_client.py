@@ -97,7 +97,7 @@ class BidderClient(ClientSessions):
         change_list = await self.fetch_market_data(collections, pro, profit)
         return {i["name"]: i["price"] for i in change_list}, change_list
 
-    @retry(infinity=True, catch_exception=True, timing=1)
+    @retry(infinity=True, timing=1)
     async def start(self) -> None:
         if not self.handlers_status:
             asyncio.create_task(self.portfolio_fetcher())

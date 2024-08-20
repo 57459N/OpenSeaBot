@@ -114,7 +114,7 @@ class SellAccount(TelegramLogger):
                         price=price_data["floor_price"],
                         assets_data=item_assets
                     )
-                    logger.debug(f'Sell response for item: {token_id} | {response}')
+                    #logger.debug(f'Sell response for item: {token_id} | {response}')
                     
             except Exception as error:
                 logger.error(f'Failed to proccess listing: {item["token_id"]} | {error}')

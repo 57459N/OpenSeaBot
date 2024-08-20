@@ -39,7 +39,7 @@ async def fetch_current_prices(profit: float, current_prices: dict, my_current_o
             if not price: best_bid_price = 0
             else: best_bid_price = price
             
-            floor_price = item_market_data["details"].get("floor", 0)
+            floor_price = item_market_data.get("price", 0)
             sales_ratio_percent = item_market_data.get("sales_ratio_percent", 0)
 
             if sales_ratio_percent > 60:
@@ -53,9 +53,7 @@ async def fetch_current_prices(profit: float, current_prices: dict, my_current_o
                         }
                     )
 
-        except (TypeError, ValueError) as error:
-            print(f'fetch_current_prices. Invalid data: {slug} - {error}')
         except Exception as error:
-            print(f'fetch_current_prices: {slug} - {error}')
+            pass
         
     return change_items
