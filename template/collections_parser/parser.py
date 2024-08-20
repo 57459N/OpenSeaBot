@@ -336,7 +336,7 @@ async def collections_prices_handler() -> None:
             settings = await get_settings_data_from_db()
             parse_settings = settings["collections"]
 
-            client = SalesParser(settings["proxies"]["parse_proxies"])
+            client = SalesParser(settings["proxies"]["main"])
 
             response = await client.fetch_collections(
                 parse_settings,
