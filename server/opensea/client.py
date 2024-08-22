@@ -279,7 +279,6 @@ class OpenseaAccount(RequestsClient):
             },
             "headers": {
                 'x-signed-query': query.signed,
-                "x-auth-address": self.address.lower(),
                 'x-kl-saas-ajax-request': 'Ajax_Request',
                 'x-app-id': 'opensea-web'
             },

@@ -115,12 +115,6 @@ class InMemoryParser(OpenseaParser):
         self.login_status = None
 
     async def submit_items(self, *item_slugs: str) -> None:
-        if not self.login_status:
-            tasks = [account.safe_executor(account.login) for account in self.clients]
-            await asyncio.gather(*tasks)
-            asyncio.create_task(self.sessions_handler())
-            self.login_status = True
-
         for i in item_slugs:
             await self.add_item(i)
 
