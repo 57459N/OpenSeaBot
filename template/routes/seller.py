@@ -5,10 +5,8 @@ import loguru
 from aiohttp import web
 
 from utils.unit import start_program
-from utils.database import get_data_from_db, change_work_statement, get_settings_data_from_db, update_settings_database
+from utils.database import get_data_from_db, change_work_statement, get_settings_data_from_db
 from aiohttp.web_request import Request
-
-from utils.unit import set_proxies
 
 routes = web.RouteTableDef()
 
