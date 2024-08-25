@@ -1,22 +1,38 @@
-BOT_API_TOKEN = "7267987681:AAH0Aw5u_zsnNUUsdl_Bhb1M_dttyjANPwk"
+# Telegram bot settings
+BOT_API_TOKEN = "5729097534:AAF3ld2ypr7AQk8Jtjpz2Bepo1KNc349mSU"
 
 LINK_TO_WEBSITE = "https://link2website.example"
 LINK_TO_SUBSCRIBE = "https://link2sub.example"
 
-SUPPORT_UID = "661081972"
+SUPPORT_UID = "536908900"
 SUPPORT_USERNAME = "S7459N"
 LINK_TO_SUPPORT = f"https://t.me/{SUPPORT_USERNAME}"
 
+
+# Server settings
 SERVER_HOST_IP = '127.0.0.1'
 SERVER_HOST_PORT = 8887
 PRICE_PARSER_IP = SERVER_HOST_IP
 PRICE_PARSER_PORT = 8888
 
+# Service settings
 PROXIES_PER_USER = 2
 TEMP_WALLET_EXPIRE_SECONDS = 60
 
 SUB_COST_MONTH = 240
 SUB_COST_DAY = SUB_COST_MONTH / 30.0
+
+# DB settings
+DB_TYPE = 'postgresql'
+DB_ENGINE = 'asyncpg'
+DB_USER = 'postgres'
+DB_PASSWORD = '123'
+DB_HOST = 'localhost'
+DB_PORT = 5432
+DB_NAME = 'openseadb'
+
+
+
 
 RPC_CONFIG = {
     'ethereum': {
