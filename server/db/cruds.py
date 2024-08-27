@@ -19,21 +19,33 @@ class DatabaseConnection:
     def __def__(self):
         self.engine.dispose()
 
-    async def add_or_update_item(self, uid: int, name: str, price: float, address: str, week_volume: float,
-                                 floor: float,
-                                 owned_delta: float, sales_ratio_percent: float, seller_fee: float,
-                                 marketplace_fee: float):
-        async with AsyncSession(self.engine) as session:
+    async def add_or_update_item(self, collection_name: str, item_name: str, price: float, address: str,
+                                 week_volume: float = None,
+                                 floor: float = None,
+                                 owned_delta: float = None,
+                                 sales_ratio_percent: float = None,
+                                 seller_fee: float = None,
+                                 marketplace_fee: float = None):
+        async with (AsyncSession(self.engine) as session):
             async with session.begin():
-                stmt = select(Item).where(Item.name == name)
+                stmt = select(Item).where(Item.name == item_name)
                 result = await session.execute(stmt)
-                item = result.scalars().first()
+                item = result.scalar_one_or_none()
+
+                # todo: get collection_id by collection name from `collection` table
+                collection_id = (
+                    await session.execute(
+                        select(Collection)
+                        .where(Collection.name == collection_name))
+                ).scalar_one().id
 
                 if item:
                     stmt = (
                         update(Item)
                         .where(Item.id == item.id)
                         .values(
+                            collection_id=collection_id,
+                            name=item_name,
                             price=price,
                             address=address,
                             week_volume=week_volume,
@@ -47,8 +59,8 @@ class DatabaseConnection:
                     await session.execute(stmt)
                 else:
                     new_item = Item(
-                        collection_id=uid,
-                        name=name,
+                        collection_id=collection_id,
+                        name=item_name,
                         price=price,
                         address=address,
                         week_volume=week_volume,
@@ -195,7 +207,6 @@ class DatabaseConnection:
         async with AsyncSession(self.engine) as session:
             async with session.begin():
                 await session.execute(update(Proxy).where(Proxy.user_id == 0).values(user_id=None))
-
 
 
 dbconn = DatabaseConnection()
