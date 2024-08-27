@@ -35,7 +35,7 @@ class Collection(Base):
     __tablename__ = 'collection'
 
     id = Column(Integer, primary_key=True)
-    name = Column(Text, unique=True, nullable=False)
+    name = Column(Text, unique=True, nullable=False, index=True)
 
     items = relationship("Item", back_populates="collection")
     users = relationship("User", secondary=user_collection_association, back_populates="collections")
