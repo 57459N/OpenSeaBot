@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 
 from server.opensea.client import OpenseaAccount
 from loguru import logger
@@ -94,10 +95,13 @@ class OpenseaParser(ClientsManager):
 
 
 class InMemoryParser(OpenseaParser):
+
     def __init__(
             self,
             path_to_proxies: str = "proxies.txt",
     ):
+        self.lock = threading.Semaphore(1)
+
         with open(path_to_proxies) as file:
             proxies = [i.replace("\n", "") for i in file.readlines()]
 
@@ -115,8 +119,9 @@ class InMemoryParser(OpenseaParser):
         self.login_status = None
 
     async def submit_items(self, *item_slugs: str) -> None:
-        for i in item_slugs:
-            await self.add_item(i)
+        with self.lock:
+            for i in item_slugs:
+                await self.add_item(i)
 
 
 class PriceParserServer:

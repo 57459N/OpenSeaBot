@@ -10,7 +10,7 @@ import os
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 import config
-from price_parser import InMemoryParser, PriceParserServer
+from server.price_parser.parser import InMemoryParser, PriceParserServer
 
 sys.path.append(os.getcwd())
 
