@@ -3,18 +3,18 @@ import asyncio
 from sqlalchemy import select, update, insert
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, selectinload
 from sqlalchemy.dialects.postgresql import Insert
 
 import config
-from db.types import User, Item, Collection, Proxy, user_item_association, CollectionsParserSettings, \
-    user_collection_association
+from db.types import User, Item, Collection, Proxy, CollectionsParserSettings, \
+    user_collection_association, UserStatus, IsRunning
 
 
 class DatabaseConnection:
     def __init__(self):
         self.engine = create_async_engine(
-            f'{config.DB_TYPE}+{config.DB_ENGINE}://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}')
+            f'{config.DB_TYPE}+{config.DB_ENGINE}://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}',
+            echo=True)
 
     def __def__(self):
         self.engine.dispose()
@@ -101,7 +101,6 @@ class DatabaseConnection:
     async def set_user_collections_parser_settings(self, uid: int, min_price: float, max_price: float,
                                                    min_one_day_sellings: int, min_one_day_volume: int,
                                                    offer_difference_percent: float, profit_percent: float):
-
         async with AsyncSession(self.engine) as session:
             async with session.begin():
                 await session.execute(
@@ -127,11 +126,55 @@ class DatabaseConnection:
                         }
                     ))
 
-            await session.commit()
+    async def add_user(self, uid: int, bot_wallet_address: str, private_key: str,
+                       balance: float = None, status: UserStatus = None):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                session.add(
+                    [User(id=uid,
+                          bot_wallet_address=bot_wallet_address,
+                          private_key=private_key,
+                          balance=balance,
+                          status=status),
+                     IsRunning(user_id=uid)
+                     ])
+
+    async def get_user(self, uid: int):
+        async with AsyncSession(self.engine, expire_on_commit=False) as session:
+            async with session.begin():
+                try:
+                    return (await session.execute(select(User).where(User.id == uid))).scalar_one()
+                except NoResultFound:
+                    return None
+
+    async def set_user_status(self, uid: int, status: UserStatus):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(update(User).where(User.id == uid).values(status=status))
+
+    async def set_user_balance(self, uid: int, balance: float):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(update(User).where(User.id == uid).values(balance=balance))
+
+    async def set_user_bot_wallet_address(self, uid: int, address: str):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(update(User).where(User.id == uid).values(bot_wallet_address=address))
+
+    async def set_user_private_key(self, uid: int, private_key: str):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(update(User).where(User.id == uid).values(private_key=private_key))
 
 
 dbconn = DatabaseConnection()
 
-if __name__ == "__main__":
-    print(asyncio.run(dbconn.get_user_collections(1)))
 
+async def generate_users():
+    await asyncio.gather(*(dbconn.add_user(i, str(i), str(i)) for i in range(4, 10000)))
+
+
+if __name__ == "__main__":
+    u = asyncio.run(dbconn.get_user(555))
+    print(u)

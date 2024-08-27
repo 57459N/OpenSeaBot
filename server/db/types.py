@@ -1,7 +1,7 @@
 import asyncio
 from sqlalchemy import (
     Column, Integer, Text, ForeignKey, Enum,
-    REAL, TIMESTAMP, Table,
+    REAL, TIMESTAMP, Table, Boolean,
 )
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import relationship, DeclarativeBase
@@ -100,12 +100,12 @@ class CollectionsParserSettings(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.id, ondelete="CASCADE"), unique=True)
-    min_price = Column(REAL)
-    max_price = Column(REAL)
-    min_one_day_sellings = Column(Integer)
-    min_one_day_volume = Column(Integer)
-    offer_difference_percent = Column(REAL)
-    profit_percent = Column(REAL)
+    min_price = Column(REAL, server_default='0.1')
+    max_price = Column(REAL, server_default='2')
+    min_one_day_sellings = Column(Integer, server_default='10')
+    min_one_day_volume = Column(Integer, server_default='5')
+    offer_difference_percent = Column(REAL, server_default='2')
+    profit_percent = Column(REAL, server_default='7')
 
     user = relationship("User", back_populates="parser_settings")
 
@@ -143,6 +143,15 @@ class Payment(Base):
     def __repr__(self):
         return (f"<Payment(id={self.id}, user_id={self.user_id}, wallet_address={self.wallet_address}, "
                 f"paid={self.paid}, created={self.created})>")
+
+
+class IsRunning(Base):
+    __tablename__ = 'is_running'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey(User.id, ondelete="CASCADE"), nullable=False, unique=True)
+    bidder = Column(Boolean, server_default='false', nullable=False)
+    seller = Column(Boolean, server_default='false', nullable=False)
 
 
 async def init():
