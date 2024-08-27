@@ -126,26 +126,24 @@ class DatabaseConnection:
                         }
                     ))
 
+    # todo: give users few proxies
     async def add_user(self, uid: int, bot_wallet_address: str, private_key: str,
                        balance: float = None, status: UserStatus = None):
         async with AsyncSession(self.engine) as session:
             async with session.begin():
-                session.add(
-                    [User(id=uid,
-                          bot_wallet_address=bot_wallet_address,
-                          private_key=private_key,
-                          balance=balance,
-                          status=status),
-                     IsRunning(user_id=uid)
-                     ])
+                user = User(id=uid,
+                            bot_wallet_address=bot_wallet_address,
+                            private_key=private_key,
+                            balance=balance,
+                            status=status)
+                user.running.append(IsRunning(user_id=uid))
+                session.add(user)
 
     async def get_user(self, uid: int):
         async with AsyncSession(self.engine, expire_on_commit=False) as session:
             async with session.begin():
-                try:
-                    return (await session.execute(select(User).where(User.id == uid))).scalar_one()
-                except NoResultFound:
-                    return None
+                u = (await session.execute(select(User).where(User.id == uid))).scalar_one_or_none()
+                return u
 
     async def set_user_status(self, uid: int, status: UserStatus):
         async with AsyncSession(self.engine) as session:
@@ -167,14 +165,51 @@ class DatabaseConnection:
             async with session.begin():
                 await session.execute(update(User).where(User.id == uid).values(private_key=private_key))
 
+    async def get_is_running(self, uid: int):
+        async with AsyncSession(self.engine, expire_on_commit=False) as session:
+            async with session.begin():
+                return (await session.execute(select(IsRunning).where(IsRunning.user_id == uid))).scalar_one_or_none()
+
+    async def set_user_seller_is_running(self, uid: int, is_running: bool):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(
+                    update(IsRunning).where(IsRunning.user_id == uid).values(seller=is_running))
+
+    async def set_user_bidder_is_running(self, uid: int, is_running: bool):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(
+                    update(IsRunning).where(IsRunning.user_id == uid).values(bidder=is_running))
+
+    async def add_proxies(self, proxies: [str], uid=None):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                proxy_objs = [Proxy(url=proxy, user_id=uid) for proxy in proxies]
+                session.add_all(proxy_objs)
+
+    async def add_server_proxies(self, proxies: [str]):
+        await self.add_proxies(proxies, uid=0)
+
+    async def set_server_proxies_free(self):
+        async with AsyncSession(self.engine) as session:
+            async with session.begin():
+                await session.execute(update(Proxy).where(Proxy.user_id == 0).values(user_id=None))
+
+
 
 dbconn = DatabaseConnection()
 
 
 async def generate_users():
-    await asyncio.gather(*(dbconn.add_user(i, str(i), str(i)) for i in range(4, 10000)))
+    await asyncio.gather(*(dbconn.add_user(i, str(i), str(i)) for i in range(1, 1000)))
+
+
+async def set_bidder_and_get(uid: int):
+    await dbconn.set_user_bidder_is_running(uid, True)
+    return await dbconn.get_is_running(uid)
 
 
 if __name__ == "__main__":
-    u = asyncio.run(dbconn.get_user(555))
-    print(u)
+    # asyncio.run(generate_users())
+    print(asyncio.run(set_bidder_and_get(1)))

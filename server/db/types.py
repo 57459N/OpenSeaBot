@@ -26,8 +26,8 @@ class UserStatus(enum.Enum):
 user_collection_association = Table(
     'user_collection_association',
     Base.metadata,
-    Column('user_id', Integer, ForeignKey('user.id'), primary_key=True),
-    Column('collection_id', Integer, ForeignKey('collection.id'), primary_key=True)
+    Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True),
+    Column('collection_id', Integer, ForeignKey('collection.id', ondelete="CASCADE"), primary_key=True)
 )
 
 
@@ -84,8 +84,9 @@ class User(Base):
     bot_wallet_address = Column(Text, unique=True, nullable=False)
     private_key = Column(Text, unique=True, nullable=False)
 
-    parser_settings = relationship("CollectionsParserSettings", uselist=False, back_populates="user")
-    proxies = relationship("Proxy", back_populates="user")
+    running = relationship('IsRunning', back_populates="user", uselist=True, lazy="selectin", single_parent=True)
+    parser_settings = relationship("CollectionsParserSettings", uselist=True, back_populates="user", single_parent=True)
+    proxies = relationship("Proxy", back_populates="user", uselist=True)
     payments = relationship("Payment", back_populates="user")
     items = relationship("Item", secondary=user_item_association, back_populates="users")
     collections = relationship("Collection", secondary=user_collection_association, back_populates="users")
@@ -107,7 +108,7 @@ class CollectionsParserSettings(Base):
     offer_difference_percent = Column(REAL, server_default='2')
     profit_percent = Column(REAL, server_default='7')
 
-    user = relationship("User", back_populates="parser_settings")
+    user = relationship("User", back_populates="parser_settings", single_parent=True)
 
     def __repr__(self):
         return (f"<CollectionsParserSettings(id={self.id}, user_id={self.user_id}, "
@@ -119,9 +120,9 @@ class Proxy(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.id, ondelete="SET NULL"))
-    proxy = Column(Text, nullable=False)
+    url = Column(Text, nullable=False)
 
-    user = relationship("User", back_populates="proxies")
+    user = relationship("User", back_populates="proxies", single_parent=True)
 
     def __repr__(self):
         return f"<Proxy(id={self.id}, user_id={self.user_id}, proxy={self.proxy})>"
@@ -138,7 +139,7 @@ class Payment(Base):
     paid = Column(REAL, default=0)
     created = Column(TIMESTAMP, nullable=False)
 
-    user = relationship("User", back_populates="payments")
+    user = relationship("User", back_populates="payments", single_parent=True)
 
     def __repr__(self):
         return (f"<Payment(id={self.id}, user_id={self.user_id}, wallet_address={self.wallet_address}, "
@@ -152,6 +153,11 @@ class IsRunning(Base):
     user_id = Column(Integer, ForeignKey(User.id, ondelete="CASCADE"), nullable=False, unique=True)
     bidder = Column(Boolean, server_default='false', nullable=False)
     seller = Column(Boolean, server_default='false', nullable=False)
+
+    user = relationship('User', back_populates='running', single_parent=True)
+
+    def __repr__(self):
+        return (f"<IsRunning(id={self.id}, user_id={self.user_id}, bidder={self.bidder}, seller={self.seller})>")
 
 
 async def init():
