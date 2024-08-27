@@ -308,26 +308,18 @@ class SalesParser(RequestsClient):
 
         return {
             "item": slug,
-            "price": round(price, 5), # is main price
+            "price": round(price, 5),  # is main price
             "details": details_data,
             "sales_ratio_percent": sales_ratio_percent
         }
 
-    async def fetch_collections(self, slugs: list, duration: str) -> list:
+    async def fetch_collections(self, slugs: list, duration: str) -> tuple:
         tasks = [
             self.safe_executor(
                 self.fetch_item, slug, duration
             ) for slug in slugs
         ]
-
-        fetch_responses = await asyncio.gather(*tasks)
-
-        for response in fetch_responses:
-            if response:
-                if response["details"]:
-                    await add_or_update_item(response)
-
-        return fetch_responses
+        return await asyncio.gather(*tasks)
 
 
 async def collections_prices_handler() -> None:
@@ -338,10 +330,14 @@ async def collections_prices_handler() -> None:
 
             client = SalesParser(settings["proxies"]["main"])
 
-            response = await client.fetch_collections(
+            fetch_responses = await client.fetch_collections(
                 parse_settings,
                 "24_hours"
             )
+
+            for response in fetch_responses:
+                if isinstance(response, dict) and response.get("details", None):
+                    await add_or_update_item(response)
 
             """
             json.dump(
@@ -349,7 +345,7 @@ async def collections_prices_handler() -> None:
             )
             """
 
-            logger.success(f'[collections_prices_handler] items in db was updated. Items: {len(response)} :>')
+            logger.success(f'[collections_prices_handler] items in db was updated. Items: {len(fetch_responses)} :>')
 
             await asyncio.sleep(60)
 
