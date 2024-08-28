@@ -7,10 +7,12 @@ from requests_client.utils.exceptions import BadStatusCode
 from requests_client.utils.headers import DEFAULT_HEADERS
 
 class RequestsClient:
-    def __init__(self, proxies=None, headers=None):
-        self.proxies = proxies or []
+    def __init__(self, proxy=None, headers=None):
+        self.proxies = proxy or []
         self.headers = headers or DEFAULT_HEADERS
         self.session = None
+
+        self.sync_session = requests.Session()
 
     async def open_session(self):
         if not self.session:
@@ -26,17 +28,25 @@ class RequestsClient:
             return {cookie.key: cookie.value for cookie in self.session.cookie_jar}
         return {}
 
-    async def fetch_kwargs(self, **kwargs):
-        kwargs.setdefault("proxy", random.choice(self.proxies) if self.proxies else None)
-        kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=10))
-        
-        if "headers" in kwargs:
-            if isinstance(kwargs["headers"], dict):
-                headers = self.headers.copy()
-                headers.update(kwargs["headers"])
-                kwargs["headers"] = headers
+    async def fetch_kwargs(self, sync_request: bool = False, **kwargs):
+        if not kwargs.get("proxy"):
+            kwargs["proxy"] = random.choice(self.proxies)
+
+        if not kwargs.get("timeout"):
+            kwargs["timeout"] = 10
+
+        if "headers" in kwargs.keys():
+            if type(kwargs["headers"]) is dict:
+                kwargs["headers"].update(self.headers)
         else:
             kwargs["headers"] = self.headers
+
+        if sync_request and kwargs["proxy"]:
+            kwargs["proxies"] = {
+                "http": kwargs["proxy"],
+                "https": kwargs["proxy"]
+            }
+            del kwargs["proxy"]
 
         return kwargs
 
@@ -48,9 +58,8 @@ class RequestsClient:
             if response.status == 200:
                 return await response.json()
             else:
-                response_text = await response.text()
                 raise BadStatusCode(
-                    f'[{url}:{method.upper()}] returned bad response code: {response.status}\nText: {response_text}'
+                    f'[{url}:{method.upper()}] returned bad response code: {response.status}'
                 )
 
     async def request_without_response(self, method: str, url: str, **kwargs):
@@ -62,10 +71,10 @@ class RequestsClient:
 
     async def async_request(self, method, url, **kwargs):
         loop = asyncio.get_event_loop()
-        kwargs = await self.fetch_kwargs(**kwargs)
+        kwargs = await self.fetch_kwargs(sync_request=True, **kwargs)
 
         def sync_request():
-            response = requests.request(method=method, url=url, **kwargs)
+            response = self.sync_session.request(method=method, url=url, **kwargs)
             if response.status_code == 200:
                 return response.json()
             else:
