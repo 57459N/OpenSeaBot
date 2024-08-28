@@ -199,9 +199,8 @@ class OpenseaAccount(RequestsClient):
                     response["data"]["collection"]["collectionOffers"]["edges"][0]["node"]["perUnitPriceType"]["unit"]
                 )
         except:
-            #logger.error(f'Session is dead, will make relogin')
-            await self.login()
-            return await self.get_collection_best_offer(collection_slug)
+            min_bid = 9999999999999999999
+
 
         return {
             "min_bid": min_bid,
@@ -270,7 +269,7 @@ class OpenseaAccount(RequestsClient):
     async def get_all_orders(self) -> None:
         pass
 
-    async def send_request(self, query: Query, variables: dict, without_response: bool = False, timeout: int = 1) -> dict:
+    async def send_request(self, query: Query, variables: dict, without_response: bool = False, timeout: int = 55) -> dict:
         kwargs = {
             "json": {
                 'id': query.id,

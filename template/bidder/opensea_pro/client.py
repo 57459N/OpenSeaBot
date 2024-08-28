@@ -365,7 +365,7 @@ class OpenseaProAccount(RequestsClient):
                 **(await request.get_kwargs())
             )
         else:
-            response = await self.async_request(
+            response = await self.request(
                 request.method,
                 request.url,
                 **(await request.get_kwargs())

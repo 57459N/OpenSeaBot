@@ -7,12 +7,11 @@ from requests_client.utils.exceptions import BadStatusCode
 from requests_client.utils.headers import DEFAULT_HEADERS
 
 class RequestsClient:
-    def __init__(self, proxy=None, headers=None):
+    def __init__(self, proxy=None, headers=None, server_url: str = "http://localhost:8080/proxy-request"):
         self.proxies = proxy or []
         self.headers = headers or DEFAULT_HEADERS
         self.session = None
-
-        self.sync_session = requests.Session()
+        self.server_url = server_url
 
     async def open_session(self):
         if not self.session:
@@ -28,36 +27,38 @@ class RequestsClient:
             return {cookie.key: cookie.value for cookie in self.session.cookie_jar}
         return {}
 
-    async def fetch_kwargs(self, sync_request: bool = False, **kwargs):
-        if not kwargs.get("proxy"):
-            kwargs["proxy"] = random.choice(self.proxies)
-
-        if not kwargs.get("timeout"):
-            kwargs["timeout"] = 10
-
-        if "headers" in kwargs.keys():
-            if type(kwargs["headers"]) is dict:
-                kwargs["headers"].update(self.headers)
+    async def fetch_kwargs(self, **kwargs):
+        kwargs.setdefault("proxy", random.choice(self.proxies) if self.proxies else None)
+        kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=10))
+        
+        if "headers" in kwargs:
+            if isinstance(kwargs["headers"], dict):
+                headers = self.headers.copy()
+                headers.update(kwargs["headers"])
+                kwargs["headers"] = headers
         else:
             kwargs["headers"] = self.headers
-
-        if sync_request and kwargs["proxy"]:
-            kwargs["proxies"] = {
-                "http": kwargs["proxy"],
-                "https": kwargs["proxy"]
-            }
-            del kwargs["proxy"]
-
         return kwargs
 
-    async def request(self, method, url, **kwargs):
+    async def request(self, method: str, url: str, **kwargs):
         await self.open_session()
         kwargs = await self.fetch_kwargs(**kwargs)
+        data = {
+            "method": method.upper(),
+            "url": url,
+            "headers": kwargs.get("headers", {}),
+            "proxy": kwargs.get("proxy", ""),
+            "params": kwargs.get("params", {}),
+            "body": kwargs.get("json", {}),
+            "content_type": "application/json"
+        }
+        print(data)
 
-        async with self.session.request(method.upper(), url, ssl=False, **kwargs) as response:
+        async with self.session.post(self.server_url, json=data) as response:
             if response.status == 200:
                 return await response.json()
             else:
+                input(f'[{url}:{method.upper()}] returned bad response code: {response.status}')
                 raise BadStatusCode(
                     f'[{url}:{method.upper()}] returned bad response code: {response.status}'
                 )
@@ -65,23 +66,15 @@ class RequestsClient:
     async def request_without_response(self, method: str, url: str, **kwargs):
         await self.open_session()
         kwargs = await self.fetch_kwargs(**kwargs)
+        data = {
+            "method": method.upper(),
+            "url": url,
+            "headers": kwargs.get("headers", {}),
+            "proxy": kwargs.get("proxy", ""),
+            "params": kwargs.get("params", {}),
+            "body": kwargs.get("json", {}),
+            "content_type": "application/json"
+        }
 
-        async with self.session.request(method.upper(), url, ssl=False, **kwargs):
+        async with self.session.post(self.server_url, json=data):
             pass  # We don't process the response
-
-    async def async_request(self, method, url, **kwargs):
-        loop = asyncio.get_event_loop()
-        kwargs = await self.fetch_kwargs(sync_request=True, **kwargs)
-
-        def sync_request():
-            response = self.sync_session.request(method=method, url=url, **kwargs)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                raise BadStatusCode(
-                    f'sync_request[{url}:{method.upper()}] returned bad response code: {response.status_code}\n'
-                )
-
-        with ThreadPoolExecutor() as pool:
-            return await loop.run_in_executor(pool, sync_request)
-

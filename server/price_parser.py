@@ -51,6 +51,7 @@ class OpenseaParser(ClientsManager):
             price = await self.fetch_price(item_id, client)
             if price:
                 self.set_item_value(item_id, price)
+                #logger.info(f'NEW price for: {item_id} : {price}')
 
     async def fetch_price(self, item_id: str, client: OpenseaAccount) -> int:
         try:
@@ -60,12 +61,15 @@ class OpenseaParser(ClientsManager):
             logger.error(error)
 
     async def start_parsing(self, item_id: str):
-        if item_id in self.tasks:
-            logger.info(f"Parsing for {item_id} is already running.")
-            return
-        self.stop_signals[item_id] = False
-        task = asyncio.create_task(self.parse_item(item_id))
-        self.tasks[item_id] = task
+        if len(self.tasks) < 20:
+            if item_id in self.tasks:
+                logger.info(f"Parsing for {item_id} is already running.")
+                return
+            self.stop_signals[item_id] = False
+            task = asyncio.create_task(self.parse_item(item_id))
+            self.tasks[item_id] = task
+        else:
+            pass
 
     async def stop_parsing(self, item_id: str):
         if item_id not in self.tasks:
