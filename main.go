@@ -49,7 +49,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to read request body", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Request body: %s", string(body))
+	//log.Printf("Request body: %s", string(body))
 
 	// Парсинг JSON в структуру RequestData
 	var requestData RequestData
@@ -59,7 +59,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Parsed request data: %+v", requestData)
+	//log.Printf("Parsed request data: %+v", requestData)
 
 	// Преобразование прокси-строки в *url.URL
 	proxyURL, err := url.Parse(requestData.Proxy)
@@ -68,7 +68,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid proxy URL", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Using proxy URL: %s", proxyURL.String())
+	//log.Printf("Using proxy URL: %s", proxyURL.String())
 
 	// Получение HTTP-клиента из пула
 	client := getClient(proxyURL)
@@ -105,7 +105,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to create request", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("HTTP request created for %s %s", requestData.Method, requestData.URL)
+	//log.Printf("HTTP request created for %s %s", requestData.Method, requestData.URL)
 
 	// Добавление заголовков
 	for key, value := range requestData.Headers {
@@ -131,7 +131,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	req.URL.RawQuery = q.Encode()
-	log.Printf("Query parameters added: %s", req.URL.RawQuery)
+	//log.Printf("Query parameters added: %s", req.URL.RawQuery)
 
 	// Отправка запроса и получение ответа
 	resp, err := client.Do(req)
@@ -141,7 +141,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	log.Printf("Received response with status code: %d", resp.StatusCode)
+	//log.Printf("Received response with status code: %d", resp.StatusCode)
 
 	// Чтение тела ответа
 	var responseBody []byte
@@ -160,19 +160,19 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	log.Printf("Response body: %s", string(responseBody))
+	//log.Printf("Response body: %s", string(responseBody))
 
 	// Обработка и установка куков из ответа
 	for _, cookie := range resp.Cookies() {
 		http.SetCookie(w, cookie)
-		log.Printf("Set cookie: %s", cookie.String())
+		//log.Printf("Set cookie: %s", cookie.String())
 	}
 
 	// Отправка тела ответа обратно клиенту
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(responseBody)
-	log.Println("Response sent back to client.")
+	//log.Println("Response sent back to client.")
 }
 
 // Пул HTTP-клиентов
