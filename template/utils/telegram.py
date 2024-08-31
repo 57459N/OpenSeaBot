@@ -14,7 +14,7 @@ class TelegramLogger:
 
     async def send_message(self, message_text: str) -> None:
         try:
-            self.data["text"] = message_text
+            self.data["text"] = str(message_text)
 
             async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.post(

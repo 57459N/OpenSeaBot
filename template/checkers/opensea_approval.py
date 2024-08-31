@@ -117,11 +117,9 @@ class WorkAccount(TelegramLogger):
 
             self.last_block_data = (current_block, True)
 
-            message = f"""
-<b>❗️New action❗️</b>
+            message = f"""❗️<b>New action</b>❗️
 
-<i>Approved all WETH for Opensea | <a href='https://etherscan.io/tx/{tx_hash}'>Etherscan</a></i>
-"""
+<i>Approved all WETH for Opensea | <a href='https://etherscan.io/tx/{tx_hash}'>Etherscan</a></i>"""
 
             asyncio.create_task(self.send_message(message))
 

@@ -164,7 +164,7 @@ class SellAccount(TelegramLogger):
 
         if len(responses) != 0:
             links = "".join(f"<a href='https://etherscan.io/tx/{Web3.to_hex(i)}'>Etherscan</a></i>\n" for i in responses)
-            message = f'<b>❗️New action❗️</b>\n\n<i>Approved new NFTs for selling:</i>\n{links}'
+            message = f'❗️<b>New action</b>❗️\n\n<i>Approved new NFTs for selling:</i>\n{links}'
             asyncio.create_task(self.send_message(message))
 
 
