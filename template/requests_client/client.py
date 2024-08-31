@@ -76,5 +76,4 @@ class RequestsClient:
             "content_type": "application/json"
         }
 
-        async with self.session.post(self.server_url, json=data):
-            pass  # We don't process the response
+        await self.session.post(self.server_url, json=data)

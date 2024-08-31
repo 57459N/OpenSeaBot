@@ -167,7 +167,7 @@ class OpenseaAccount(RequestsClient):
         }
         """
         logger.debug(f'Close data: {close_data}')
-        response = await self.get_listings(collections=[])  # collections=list(close_data.keys())
+        response = await self.get_listings(collections=list(close_data.keys()))  # collections=list(close_data.keys())
 
         bad_orders = []
         for item in response:
@@ -180,7 +180,7 @@ class OpenseaAccount(RequestsClient):
         if len(bad_orders) == 0:
             return {}
 
-        # logger.debug(f'Bad orders: {bad_orders}')
+        logger.debug(f'Bad orders: {bad_orders}')
 
         response = await self.send_request(Queries.cancel_orders, {'orders': bad_orders}, without_response=True)
         # logger.debug(f'Cancel response: {response}')
