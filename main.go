@@ -22,9 +22,9 @@ type RequestData struct {
 	URL         string                 `json:"url"`
 	Headers     map[string]string      `json:"headers"`
 	Proxy       string                 `json:"proxy"`
-	Params      map[string]interface{} `json:"params"`       // Поддержка массивов и строк
-	Body        interface{}            `json:"body"`         // Может содержать либо JSON, либо данные формы
-	ContentType string                 `json:"content_type"` // Указывает, является ли тело JSON или form data
+	Params      map[string]interface{} `json:"params"`
+	Body        interface{}            `json:"body"`
+	ContentType string                 `json:"content_type"`
 }
 
 // Функция для распаковки GZIP с потоковым чтением
@@ -47,7 +47,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close() // Закрытие r.Body после чтения
+	defer r.Body.Close()
 
 	// Парсинг JSON в структуру RequestData
 	var requestData RequestData
@@ -67,7 +67,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Получение HTTP-клиента из пула
 	client := getClient(proxyURL)
-	defer putClient(client) // Возврат клиента в пул после использования
+	defer putClient(client)
 
 	// Создание тела запроса в зависимости от типа данных
 	var reqBody io.Reader
@@ -101,12 +101,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Добавление заголовков
+	// Добавление заголовков, включая куки
 	for key, value := range requestData.Headers {
 		req.Header.Set(key, value)
-	}
-	if requestData.ContentType != "" {
-		req.Header.Set("Content-Type", requestData.ContentType)
 	}
 
 	// Добавление параметров к URL
@@ -132,7 +129,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error making request: %v", err), http.StatusInternalServerError)
 		return
 	}
-	defer resp.Body.Close() // Закрытие тела ответа
+	defer resp.Body.Close()
 
 	// Чтение тела ответа
 	var responseBody []byte

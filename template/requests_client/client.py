@@ -32,13 +32,18 @@ class RequestsClient:
             kwargs["proxy"] = random.choice(self.proxies)
 
         if not kwargs.get("timeout"):
-            kwargs["timeout"] = 1
+            kwargs["timeout"] = 10
 
-        if "headers" in kwargs.keys():
-            if type(kwargs["headers"]) is dict:
-                kwargs["headers"].update(self.headers)
-        if "headers" not in kwargs.keys():
-            kwargs["headers"] = DEFAULT_HEADERS
+        if "headers" not in kwargs:
+            kwargs["headers"] = self.headers.copy()
+        else:
+            kwargs["headers"].update(self.headers)
+
+        # Добавление куков в заголовки
+        cookies = await self.get_cookies()
+        if cookies:
+            cookie_header = "; ".join([f"{key}={value}" for key, value in cookies.items()])
+            kwargs["headers"]["Cookie"] = cookie_header
 
         return kwargs
 
@@ -56,6 +61,7 @@ class RequestsClient:
         }
 
         async with self.session.post(self.server_url, json=data) as response:
+            
             if response.status == 200:
                 return await response.json()
             else:
@@ -76,4 +82,5 @@ class RequestsClient:
             "content_type": "application/json"
         }
 
-        await self.session.post(self.server_url, json=data)
+        async with self.session.post(self.server_url, json=data) as response:
+            pass

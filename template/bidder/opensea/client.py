@@ -78,8 +78,10 @@ class OpenseaAccount(RequestsClient):
 
         response = await self.send_request(Queries.auth_login, variables)
         if "data" in response.keys():
+            logger.success(f"Logged in to opensea | {response}")
             self.session_cookies.update(await self.get_cookies())
             self.cookies = self.session.cookie_jar
+            logger.debug(self.cookies)
             return True
         else:
             raise Exception(f"Failed login to OpenSea, response: {response}")
