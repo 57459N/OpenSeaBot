@@ -40,7 +40,7 @@ func decompressGZIPStream(reader io.Reader) ([]byte, error) {
 
 // Оптимизированный обработчик запросов
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling new request...")
+	//log.Println("Handling new request...")
 
 	// Чтение тела запроса
 	body, err := ioutil.ReadAll(r.Body)
@@ -96,7 +96,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	log.Println("Request body prepared.")
+	//log.Println("Request body prepared.")
 
 	// Создание запроса
 	req, err := http.NewRequest(requestData.Method, requestData.URL, reqBody)
@@ -114,7 +114,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	if requestData.ContentType != "" {
 		req.Header.Set("Content-Type", requestData.ContentType)
 	}
-	log.Println("Headers set on the request.")
+	// log.Println("Headers set on the request.")
 
 	// Добавление параметров к URL
 	q := req.URL.Query()
