@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -38,12 +39,58 @@ func decompressGZIPStream(reader io.Reader) ([]byte, error) {
 	return ioutil.ReadAll(gzipReader)
 }
 
-// Оптимизированный обработчик запросов
+// Кэш для хранения http.Client по прокси
+var clientCache = struct {
+	sync.Mutex
+	clients map[string]*http.Client
+}{
+	clients: make(map[string]*http.Client),
+}
+
+// Функция для получения http.Client по прокси
+func getClient(proxyStr string) (*http.Client, error) {
+	clientCache.Lock()
+	defer clientCache.Unlock()
+
+	if client, exists := clientCache.clients[proxyStr]; exists {
+		return client, nil
+	}
+
+	proxyURL, err := url.Parse(proxyStr)
+	if err != nil {
+		return nil, err
+	}
+
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		MaxIdleConns:          100,              // Максимальное общее количество простых соединений
+		MaxIdleConnsPerHost:   10,               // Максимальное количество простых соединений на хост
+		IdleConnTimeout:       90 * time.Second, // Время ожидания простого соединения
+		TLSHandshakeTimeout:   10 * time.Second, // Таймаут TLS рукопожатия
+		ExpectContinueTimeout: 1 * time.Second,  // Таймаут ожидания 100-continue
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true, // Отключение проверки сертификатов (по необходимости)
+		},
+	}
+
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second, // Общий таймаут для запроса
+	}
+
+	clientCache.clients[proxyStr] = client
+	return client, nil
+}
+
+// Основная функция обработки запросов
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Чтение тела запроса
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error reading request body: %v", err)
 		http.Error(w, "Unable to read request body", http.StatusBadRequest)
 		return
 	}
@@ -52,30 +99,23 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Парсинг JSON в структуру RequestData
 	var requestData RequestData
 	if err := json.Unmarshal(body, &requestData); err != nil {
-		log.Printf("Error parsing JSON: %v", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Преобразование прокси-строки в *url.URL
-	proxyURL, err := url.Parse(requestData.Proxy)
+	// Получение http.Client по прокси
+	client, err := getClient(requestData.Proxy)
 	if err != nil {
-		log.Printf("Error parsing proxy URL: %v", err)
 		http.Error(w, "Invalid proxy URL", http.StatusBadRequest)
 		return
 	}
 
-	// Получение HTTP-клиента из пула
-	client := getClient(proxyURL)
-	defer putClient(client)
-
-	// Создание тела запроса в зависимости от типа данных
+	// Создание тела запроса
 	var reqBody io.Reader
 	if requestData.Body != nil {
 		if requestData.ContentType == "application/json" {
 			jsonData, err := json.Marshal(requestData.Body)
 			if err != nil {
-				log.Printf("Error encoding JSON body: %v", err)
 				http.Error(w, "Failed to encode JSON body", http.StatusInternalServerError)
 				return
 			}
@@ -87,26 +127,24 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			}
 			reqBody = strings.NewReader(formData.Encode())
 		} else {
-			log.Printf("Unsupported content type: %s", requestData.ContentType)
 			http.Error(w, "Unsupported content type", http.StatusBadRequest)
 			return
 		}
 	}
 
-	// Создание запроса
+	// Создание нового HTTP-запроса
 	req, err := http.NewRequest(requestData.Method, requestData.URL, reqBody)
 	if err != nil {
-		log.Printf("Error creating request: %v", err)
 		http.Error(w, "Unable to create request", http.StatusInternalServerError)
 		return
 	}
 
-	// Добавление заголовков, включая куки
+	// Добавление заголовков
 	for key, value := range requestData.Headers {
 		req.Header.Set(key, value)
 	}
 
-	// Добавление параметров к URL
+	// Добавление параметров запроса
 	q := req.URL.Query()
 	for key, value := range requestData.Params {
 		switch v := value.(type) {
@@ -117,16 +155,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 				q.Add(key, fmt.Sprintf("%v", item))
 			}
 		default:
-			log.Printf("Unsupported parameter type: %s", key)
+			http.Error(w, "Invalid query parameter", http.StatusBadRequest)
+			return
 		}
 	}
 	req.URL.RawQuery = q.Encode()
 
-	// Отправка запроса и получение ответа
+	// Отправка запроса
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Error making request to target URL: %v", err)
-		http.Error(w, fmt.Sprintf("Error making request: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error making request: %v", err), http.StatusBadGateway)
 		return
 	}
 	defer resp.Body.Close()
@@ -136,63 +174,37 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		responseBody, err = decompressGZIPStream(resp.Body)
 		if err != nil {
-			log.Printf("Error decompressing response: %v", err)
 			http.Error(w, "Failed to decompress response", http.StatusInternalServerError)
 			return
 		}
 	} else {
 		responseBody, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Printf("Error reading response body: %v", err)
 			http.Error(w, "Unable to read response body", http.StatusInternalServerError)
 			return
 		}
 	}
 
-	// Обработка и установка куков из ответа
-	for _, cookie := range resp.Cookies() {
-		http.SetCookie(w, cookie)
+	// Копирование заголовков из исходного ответа
+	for key, values := range resp.Header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
 	}
 
-	// Отправка тела ответа обратно клиенту
-	w.Header().Set("Content-Type", "application/json")
+	// Установка статуса ответа
 	w.WriteHeader(resp.StatusCode)
-	w.Write(responseBody)
-}
 
-// Пул HTTP-клиентов
-var clientPool = sync.Pool{
-	New: func() interface{} {
-		return &http.Client{
-			Timeout: 10 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true, // Отключение проверки сертификатов (по необходимости)
-				},
-			},
-		}
-	},
-}
-
-// Получение клиента из пула или создание нового
-func getClient(proxyURL *url.URL) *http.Client {
-	client := clientPool.Get().(*http.Client)
-	client.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyURL)
-	return client
-}
-
-// Возврат клиента в пул
-func putClient(client *http.Client) {
-	clientPool.Put(client)
+	// Запись тела ответа
+	_, err = w.Write(responseBody)
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
 
 func main() {
-	// Настройка маршрута
-	http.HandleFunc("/proxy-request", func(w http.ResponseWriter, r *http.Request) {
-		handleRequest(w, r)
-	})
+	http.HandleFunc("/proxy-request", handleRequest)
 
-	// Запуск сервера на порту 8080
 	log.Println("Starting server on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
