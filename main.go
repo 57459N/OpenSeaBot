@@ -67,11 +67,11 @@ func getClient(proxyStr string) (*http.Client, error) {
 			Timeout:   10 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		MaxIdleConns:          100,              // Максимальное общее количество простых соединений
-		MaxIdleConnsPerHost:   10,               // Максимальное количество простых соединений на хост
-		IdleConnTimeout:       90 * time.Second, // Время ожидания простого соединения
-		TLSHandshakeTimeout:   10 * time.Second, // Таймаут TLS рукопожатия
-		ExpectContinueTimeout: 1 * time.Second,  // Таймаут ожидания 100-continue
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true, // Отключение проверки сертификатов (по необходимости)
 		},
@@ -79,7 +79,7 @@ func getClient(proxyStr string) (*http.Client, error) {
 
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   30 * time.Second, // Общий таймаут для запроса
+		Timeout:   30 * time.Second,
 	}
 
 	clientCache.clients[proxyStr] = client
@@ -171,18 +171,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Чтение тела ответа
 	var responseBody []byte
-	if resp.Header.Get("Content-Encoding") == "gzip" {
-		responseBody, err = decompressGZIPStream(resp.Body)
-		if err != nil {
-			http.Error(w, "Failed to decompress response", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		responseBody, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			http.Error(w, "Unable to read response body", http.StatusInternalServerError)
-			return
-		}
+
+	responseBody, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Unable to read response body", http.StatusInternalServerError)
+		return
 	}
 
 	// Копирование заголовков из исходного ответа
