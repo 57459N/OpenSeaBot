@@ -28,16 +28,18 @@ class RequestsClient:
         return {}
 
     async def fetch_kwargs(self, **kwargs):
-        kwargs.setdefault("proxy", random.choice(self.proxies) if self.proxies else None)
-        kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=10))
-        
-        if "headers" in kwargs:
-            if isinstance(kwargs["headers"], dict):
-                headers = self.headers.copy()
-                headers.update(kwargs["headers"])
-                kwargs["headers"] = headers
-        else:
-            kwargs["headers"] = self.headers
+        if not kwargs.get("proxy"):
+            kwargs["proxy"] = random.choice(self.proxies)
+
+        if not kwargs.get("timeout"):
+            kwargs["timeout"] = 1
+
+        if "headers" in kwargs.keys():
+            if type(kwargs["headers"]) is dict:
+                kwargs["headers"].update(self.headers)
+        if "headers" not in kwargs.keys():
+            kwargs["headers"] = DEFAULT_HEADERS
+
         return kwargs
 
     async def request(self, method: str, url: str, **kwargs):
@@ -52,15 +54,13 @@ class RequestsClient:
             "body": kwargs.get("json", {}),
             "content_type": "application/json"
         }
-        print(data)
 
         async with self.session.post(self.server_url, json=data) as response:
             if response.status == 200:
                 return await response.json()
             else:
-                input(f'[{url}:{method.upper()}] returned bad response code: {response.status}')
                 raise BadStatusCode(
-                    f'[{url}:{method.upper()}] returned bad response code: {response.status}'
+                    f'[{url}:{method.upper()}] returned bad response code: {response.status} | {await response.text()}'
                 )
 
     async def request_without_response(self, method: str, url: str, **kwargs):

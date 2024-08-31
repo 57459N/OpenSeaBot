@@ -104,7 +104,7 @@ class OpenseaProParser(RequestsClient):
 
         for _ in range(pages):
             try:
-                response = await self.async_request(
+                response = await self.request(
                     "get",
                     "https://api.pro.opensea.io/collections",
                     params={
@@ -262,16 +262,16 @@ class SalesParser(RequestsClient):
         return eth_sales_total / ((eth_sales_total + other_asset_sales) / 100)
 
     async def fetch_details(self, slug: str) -> dict:
-        response = (await self.async_request(
+        response = (await self.request(
             "get",
-            "https://api.pro.opensea.io/collections%2F" + slug,
+            "https://api.pro.opensea.io/collections/" + slug,
             params=PARAMS
         ))["data"]
 
         items_response = (
-            await self.async_request(
+            await self.request(
                 "get",
-                "https://api.pro.opensea.io/collections%2F" + slug + "%2Fassets",
+                "https://api.pro.opensea.io/collections/" + slug + "/assets",
                 params=FETCH_FLOOR_PRICE
             )
         )["data"]
@@ -292,7 +292,7 @@ class SalesParser(RequestsClient):
         durations: 24_hours, 7_days, 30_days, 1_hour, 5_mins
         """
 
-        response = await self.async_request(
+        response = await self.request(
             "get",
             f"https://api.pro.opensea.io/collections%2F{slug}%2Fsales",
             params={"duration": duration}
