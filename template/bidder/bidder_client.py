@@ -30,6 +30,9 @@ class ClientSessions:
     async def sessions_handler(self) -> None:
         while await get_data_from_db():
             await asyncio.gather(self.opensea.login(), self.opensea_pro.login())
+            await self.executor(self.opensea.close_all_active_offers)
+            self.current_orders = {item: 0 for item in self.config.get("collections", [])}
+
             await asyncio.sleep(500)
 
     async def portfolio_fetcher(self) -> None:
@@ -103,10 +106,7 @@ class BidderClient(ClientSessions):
             asyncio.create_task(self.portfolio_fetcher())
             asyncio.create_task(self.sessions_handler())
             self.handlers_status = True
-            await asyncio.sleep(10)
-        
-        await self.executor(self.opensea.close_all_active_offers)
-        self.current_orders = {item: 0 for item in self.config.get("collections", [])}
+            await asyncio.sleep(20)
 
         while await get_data_from_db():
             close_data, change_list = await self.get_change_list()
