@@ -176,7 +176,7 @@ class OpenseaProParser(RequestsClient):
         for item in fetch_data["data"]:
             _item = item["stats"]
 
-            if min_price < _item["floor_price"] < max_price:
+            if min_price < _item["floor_price"] < max_price and _item["floor_price_7d"]["change"] < 0.8:
                 if min_one_day_sellings < _item["one_day_sales"]:
                     if min_one_day_volume < _item["one_day_volume"]:
                         percentage_difference = ((_item["floor_price"] - _item["top_offer_price"]) / _item[
