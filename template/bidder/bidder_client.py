@@ -100,7 +100,7 @@ class BidderClient(ClientSessions):
         change_list = await self.fetch_market_data(collections, pro, profit)
         return {i["name"]: i["price"] for i in change_list}, change_list
 
-    @retry(infinity=True, timing=1)
+    @retry(infinity=True, timing=1, catch_exception=True)
     async def start(self) -> None:
         if not self.handlers_status:
             asyncio.create_task(self.portfolio_fetcher())
@@ -108,6 +108,10 @@ class BidderClient(ClientSessions):
             self.handlers_status = True
             await asyncio.sleep(20)
 
-        while await get_data_from_db():
-            close_data, change_list = await self.get_change_list()
-            await self.process_batch_orders(change_list, close_data)
+        while True:
+            try:
+                close_data, change_list = await self.get_change_list()
+                logger.debug(f'close_data: {close_data} | change_list: {change_list}')
+                await self.process_batch_orders(change_list, close_data)
+            except Exception as err:
+                print(err)

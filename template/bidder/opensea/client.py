@@ -20,6 +20,7 @@ class OpenseaAccount(RequestsClient):
         self.account: Account = Account.from_key(secret_key)
         self.address: str = self.account.address
         self.session_cookies = {}
+        self.closed = []
 
     async def safe_executor(self, function, *args, **kwargs):
         try:
@@ -115,31 +116,28 @@ class OpenseaAccount(RequestsClient):
         # await self.close_session()
 
         variables = {
-            'filterByOrderRules': True,
+            'filterByOrderRules': False,
             'isExpired': False,
             'makerAssetIsPayment': True,
             'collections': collections if len(collections) != 0 else None,
             'identity': {
-                'address': self.address,
+                'address': self.address.lower(),
             },
             'sortAscending': None,
-            'includeInvalidBids': False,
+            'includeInvalidBids': True,
             'sortBy': 'OPENED_AT',
             'maker': {
-                'address': self.address,
+                'address': self.address.lower(),
             },
-            'orderStatusToggles': [
-                'ACTIVE',
-            ],
-            'offerTypeToggles': [
-                'COLLECTION',
-            ],
+            'orderStatusToggles': None,
+            'offerTypeToggles': None,
             'includeCriteriaOrders': True,
             'cursor': None,
-            'count': 32
+            'count': 20
         }
 
         response = await self.send_request(Queries.get_all_listings, variables)
+        #logger.debug(response)
         orders_info = response["data"]["orders"]["edges"]
 
         if len(collections) == 0:
@@ -167,8 +165,8 @@ class OpenseaAccount(RequestsClient):
             "name3": price
         }
         """
-        logger.debug(f'Close data: {close_data}')
-        response = await self.get_listings(collections=list(close_data.keys()))  # collections=list(close_data.keys())
+        #logger.debug(f'Close data: {close_data}')
+        response = await self.get_listings()  # collections=list(close_data.keys())
 
         bad_orders = []
         for item in response:
@@ -182,9 +180,10 @@ class OpenseaAccount(RequestsClient):
             return {}
 
         #logger.debug(f'Bad orders: {bad_orders}')
+        #bad_orders = [i for i in list(set(bad_orders)) if i not in self.closed]
 
         response = await self.send_request(Queries.cancel_orders, {'orders': list(set(bad_orders))}, without_response=True)
-        # logger.debug(f'Cancel response: {response}')
+        logger.debug(f'Cancel response: {response}')
         return response
 
     async def get_collection_best_offer(self, collection_slug: str) -> float:

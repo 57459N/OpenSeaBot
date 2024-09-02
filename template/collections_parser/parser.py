@@ -174,15 +174,18 @@ class OpenseaProParser(RequestsClient):
         result = []
 
         for item in fetch_data["data"]:
-            _item = item["stats"]
+            try:
+                _item = item["stats"]
 
-            if min_price < _item["floor_price"] < max_price and _item["floor_price_1d"]["change"] < 0.8:
-                if min_one_day_sellings < _item["one_day_sales"]:
-                    if min_one_day_volume < _item["one_day_volume"]:
-                        percentage_difference = ((_item["floor_price"] - _item["top_offer_price"]) / _item[
-                            "floor_price"]) * 100
-                        if offer_difference_percent < percentage_difference:
-                            result.append(item["slug"])
+                if min_price < _item["floor_price"] < max_price and _item["floor_price_1d"]["change"] < 0.8:
+                    if min_one_day_sellings < _item["one_day_sales"]:
+                        if min_one_day_volume < _item["one_day_volume"]:
+                            percentage_difference = ((_item["floor_price"] - _item["top_offer_price"]) / _item[
+                                "floor_price"]) * 100
+                            if offer_difference_percent < percentage_difference:
+                                result.append(item["slug"])
+            except Exception as error:
+                logger.error(error)
 
         return result
 

@@ -60,7 +60,7 @@ def retry(
         custom_message: str = "Random error:",
         catch_exception: bool = False
 ):
-    if infinity: max_retries = 2*256
+    if infinity: max_retries = 2**256
     
     def retry_decorator(func):
         async def _wrapper(*args, **kwargs):
