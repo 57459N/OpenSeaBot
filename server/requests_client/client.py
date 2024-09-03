@@ -1,10 +1,8 @@
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import aiohttp
 import random
-import requests
 from requests_client.utils.exceptions import BadStatusCode
 from requests_client.utils.headers import DEFAULT_HEADERS
+
 
 class RequestsClient:
     def __init__(self, proxy=None, headers=None, server_url: str = "http://localhost:8080/proxy-request"):
@@ -30,7 +28,7 @@ class RequestsClient:
     async def fetch_kwargs(self, **kwargs):
         kwargs.setdefault("proxy", random.choice(self.proxies) if self.proxies else None)
         kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=10))
-        
+
         if "headers" in kwargs:
             if isinstance(kwargs["headers"], dict):
                 headers = self.headers.copy()
@@ -52,14 +50,16 @@ class RequestsClient:
             "body": kwargs.get("json", {}),
             "content_type": "application/json"
         }
-
-        async with self.session.post(self.server_url, json=data) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                raise BadStatusCode(
-                    f'[{url}:{method.upper()}] returned bad response code: {response.status}'
-                )
+        try:
+            async with self.session.post(self.server_url, json=data) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    raise BadStatusCode(
+                        f'[{url}:{method.upper()}] returned bad response code: {response.status}'
+                    )
+        finally:
+            await self.close_session()
 
     async def request_without_response(self, method: str, url: str, **kwargs):
         await self.open_session()
@@ -73,6 +73,8 @@ class RequestsClient:
             "body": kwargs.get("json", {}),
             "content_type": "application/json"
         }
-
-        async with self.session.post(self.server_url, json=data):
-            pass  # We don't process the response
+        try:
+            async with self.session.post(self.server_url, json=data):
+                pass  # We don't process the response
+        finally:
+            await self.close_session()

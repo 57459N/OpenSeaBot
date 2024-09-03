@@ -1,4 +1,7 @@
 from datetime import datetime
+
+import loguru
+
 from utils.database import get_items_by_names
 
 
@@ -21,9 +24,11 @@ async def get_format_typed_message(client_message: dict) -> dict:
                 for value in _data.keys():
                     try:
                         _data[value] = int(_data[value])
-                    except: pass
-        
+                    except:
+                        pass
+
     return client_message
+
 
 async def fetch_current_prices(profit: float, current_prices: dict, my_current_orders: dict):
     change_items = []
@@ -36,9 +41,11 @@ async def fetch_current_prices(profit: float, current_prices: dict, my_current_o
             my_order_price = float(my_current_orders.get(slug, 0))
             item_market_data = items_market_data[slug]
 
-            if not price: best_bid_price = 0
-            else: best_bid_price = price
-            
+            if not price:
+                best_bid_price = 0
+            else:
+                best_bid_price = price
+
             floor_price = item_market_data.get("price", 0)
             sales_ratio_percent = item_market_data.get("sales_ratio_percent", 0)
 

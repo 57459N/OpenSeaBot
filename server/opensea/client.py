@@ -1,10 +1,10 @@
 from requests_client.client import RequestsClient
 from eth_account import Account
-from opensea.types.api_types import Queries, Endpoints, PaymentAssets, Offer, Query
+from server.opensea.types.api_types import Queries, Endpoints, PaymentAssets, Offer, Query
 from eth_account.messages import encode_defunct, encode_structured_data
 from time import time
 import json
-from opensea.utils import *
+from server.opensea.utils import *
 from random import choice
 import asyncio
 from loguru import logger

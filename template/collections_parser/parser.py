@@ -262,7 +262,7 @@ class SalesParser(RequestsClient):
             else:
                 other_asset_sales += 1
 
-        return eth_sales_total / ((eth_sales_total + other_asset_sales) / 100)
+        return eth_sales_total / ((eth_sales_total + other_asset_sales) / 100 + 1e-6)
 
     async def fetch_details(self, slug: str) -> dict:
         response = (await self.request(

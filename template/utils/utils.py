@@ -1,3 +1,5 @@
+import functools
+
 import aiofiles
 import json
 import hashlib
@@ -27,9 +29,11 @@ async def read_json_file(file_path: str) -> dict:
         json_data = json.loads(data)
         return json_data
 
+
 async def get_user_id() -> int:
     user_data = await read_json_file(UNIT_DATA)
     return user_data["uid"]
+
 
 async def load_data() -> dict:
     return {
@@ -60,22 +64,23 @@ def retry(
         custom_message: str = "Random error:",
         catch_exception: bool = False
 ):
-    if infinity: max_retries = 2**256
-    
+    if infinity: max_retries = 2 ** 256
+
     def retry_decorator(func):
+        @functools.wraps(func)
         async def _wrapper(*args, **kwargs):
             for attempt in range(max_retries):
                 try:
                     return await func(*args, **kwargs)
                 except Exception as error:
                     if catch_exception:
-                        logger.error(error)
+                        logger.error(f'{func.__name__} error: {error}')
                     else:
                         logger.error(f'{custom_message} | Attempt {attempt + 1} | {error}')
-                    
+
                     await asyncio.sleep(timing)
             raise Exception(f"Retry attempts exceeded {func.__name__}")
 
         return _wrapper
-    
+
     return retry_decorator
